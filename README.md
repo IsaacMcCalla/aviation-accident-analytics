@@ -116,14 +116,14 @@ See `docs/performance_log.md` for before/after runtimes, logical reads, executio
 
 See `docs/runbook_failed_ingestion.md`. Code meanings and mapping decisions are in `docs/data_dictionary.md`.
 
-## Resume bullets (fill in with your real numbers once built)
+## Additional Information
 
 - Extracted 31,000+ NTSB accident records (2008–present) from a Microsoft Access source into a SQL Server star schema, with automated data quality checks and an ingestion log
 - Cut a heavy safety report from 438 ms to 134 ms and from 455,000 to under 1,000 logical reads by replacing correlated per-row lookups with indexed set-based joins and a pre-computed text flag, validated against identical results
 - Delivered a Power BI dashboard and a parameterized ad hoc report procedure, documented with a README, data dictionary, and troubleshooting runbook
 - Classified [X] accident narratives with rule-based text tagging to quantify causes such as fuel exhaustion and VFR flight into IMC
 
-## Known limitations (be upfront about these in interviews)
+## Known limitations
 
 - NTSB data records accidents, not exposure. Counts without flight hours or fleet size say little about relative risk.
 - Coverage starts in 2008, when the NTSB changed its cause coding. Adding the older `Pre2008.mdb` file would extend trends back to 1982, but its phase and cause codes need mapping to the newer system.
