@@ -15,7 +15,7 @@ The container never connects to SQL Server. It reads a snapshot file that `src/e
 | `Dockerfile` | How the image is built (Python 3.12 slim, runs as a non-root user, health check) |
 | `compose.yaml` | How the container runs: port 8080 on localhost, `data/` mounted read-only, restarts automatically |
 | `.streamlit/config.toml` | Streamlit settings (no usage statistics sent) |
-| `data/accidents.db` | The snapshot (not in git; created by the export script) |
+| `data/accidents.db` | The snapshot, created by the export script; committed to git so the public site has data |
 
 ## First run
 
