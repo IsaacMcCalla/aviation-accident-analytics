@@ -1,0 +1,588 @@
+cultureInfo en-US
+
+	linguisticMetadata =
+			{
+			  "Version": "2.0.0",
+			  "Language": "en-US",
+			  "Entities": {
+			    "accident.fatal_": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Accident",
+			          "ConceptualProperty": "Fatal %"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Fatal share": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "accident.is_us": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Accident",
+			          "ConceptualProperty": "is_us"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "U.S. only": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "accident.accidents_per_1000_registered": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Accident",
+			          "ConceptualProperty": "Accidents per 1,000 Registered"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Per 1,000 registered": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "accident.pilot_hours_band": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Accident",
+			          "ConceptualProperty": "pilot_hours_band"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Pilot total hours": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "accident.light_cond": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Accident",
+			          "ConceptualProperty": "light_cond"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Light": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "accident.highest_injury": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Accident",
+			          "ConceptualProperty": "highest_injury"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Highest injury": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "accident.ev_state": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Accident",
+			          "ConceptualProperty": "ev_state"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "State": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "accident.accident_key": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Accident",
+			          "ConceptualProperty": "accident_key"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Accident": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "accident.avg_longitude": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Accident",
+			          "ConceptualProperty": "Avg Longitude"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Longitude": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "accident.avg_latitude": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Accident",
+			          "ConceptualProperty": "Avg Latitude"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Latitude": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "accident.ev_date": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Accident",
+			          "ConceptualProperty": "ev_date"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Date": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "accident.ntsb_no": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Accident",
+			          "ConceptualProperty": "ntsb_no"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "NTSB no.": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "accident.ev_city": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Accident",
+			          "ConceptualProperty": "ev_city"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "City": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "accident.event_fatalities": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Accident",
+			          "ConceptualProperty": "event_fatalities"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Fatalities": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "accident.probable_cause": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Accident",
+			          "ConceptualProperty": "probable_cause"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Probable cause": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "operation.operation_name": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Operation",
+			          "ConceptualProperty": "operation_name"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Operation": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "operation.far_part": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Operation",
+			          "ConceptualProperty": "far_part"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "FAR part": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "calendar.year": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Calendar",
+			          "ConceptualProperty": "year"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Year": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "phase.phase_group": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Phase",
+			          "ConceptualProperty": "phase_group"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Phase": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "phase.phase_name": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Phase",
+			          "ConceptualProperty": "phase_name"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Detailed phase": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        },
+			        {
+			          "Phase": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "finding.finding_category": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Finding",
+			          "ConceptualProperty": "finding_category"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Finding category": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "tag.tag": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Tag",
+			          "ConceptualProperty": "tag"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Tag": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "tag.tagged_fatal_": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Tag",
+			          "ConceptualProperty": "Tagged Fatal %"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Fatal share": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "aircraft.acft_category": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Aircraft",
+			          "ConceptualProperty": "acft_category"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Category": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "aircraft.make": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Aircraft",
+			          "ConceptualProperty": "make"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Make": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "aircraft.model": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Aircraft",
+			          "ConceptualProperty": "model"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Model": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "weather.wx_name": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Weather",
+			          "ConceptualProperty": "wx_name"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Weather": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    }
+			  }
+			}
+		contentType: json
+

@@ -1,0 +1,26 @@
+model Model
+	culture: en-US
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: en-US
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation __PBI_TimeIntelligenceEnabled = 0
+
+annotation PBI_QueryOrder = ["Server","Database","Accident","Calendar","Aircraft","Operation","Phase","Weather","Tag","Finding","Fleet"]
+
+annotation PBI_ProTooling = ["DevMode"]
+
+ref table Accident
+ref table Calendar
+ref table Aircraft
+ref table Operation
+ref table Phase
+ref table Weather
+ref table Tag
+ref table Finding
+ref table Fleet
+
+ref cultureInfo en-US
+

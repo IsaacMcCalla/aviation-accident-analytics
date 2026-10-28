@@ -1,0 +1,39 @@
+table Weather
+	lineageTag: 10e421f8-fa56-5aba-91c7-ec03b253dc8a
+
+	column wx_cond_key
+		dataType: int64
+		isHidden
+		lineageTag: 88b20407-9fb0-56ba-a67f-bbe67111775e
+		summarizeBy: none
+		sourceColumn: wx_cond_key
+
+		annotation SummarizationSetBy = User
+
+	column wx_code
+		dataType: string
+		lineageTag: 0bb199c1-58bc-5e0b-9c3b-2bb22b501d21
+		summarizeBy: none
+		sourceColumn: wx_code
+
+		annotation SummarizationSetBy = User
+
+	column wx_name
+		dataType: string
+		lineageTag: 80ce8eff-0aab-5f86-b05e-c2b537a3296c
+		summarizeBy: none
+		sourceColumn: wx_name
+
+		annotation SummarizationSetBy = User
+
+	partition Weather = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database(Server, Database),
+				    Data = Source{[Schema = "dbo", Item = "vw_pbi_weather"]}[Data]
+				in
+				    Data
+
+	annotation PBI_ResultType = Table
+

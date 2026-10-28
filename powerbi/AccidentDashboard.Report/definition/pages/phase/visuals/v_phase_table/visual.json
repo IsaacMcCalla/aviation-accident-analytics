@@ -1,0 +1,135 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
+  "name": "v_phase_table",
+  "position": {
+    "x": 20,
+    "y": 400,
+    "z": 0,
+    "height": 300,
+    "width": 1240
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Phase"
+                    }
+                  },
+                  "Property": "phase_group"
+                }
+              },
+              "queryRef": "Phase.phase_group",
+              "nativeQueryRef": "phase_group",
+              "displayName": "Phase"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Phase"
+                    }
+                  },
+                  "Property": "phase_name"
+                }
+              },
+              "queryRef": "Phase.phase_name",
+              "nativeQueryRef": "phase_name",
+              "displayName": "Detailed phase"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Accident"
+                    }
+                  },
+                  "Property": "Accidents"
+                }
+              },
+              "queryRef": "Accident.Accidents",
+              "nativeQueryRef": "Accidents"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Accident"
+                    }
+                  },
+                  "Property": "Fatal Accidents"
+                }
+              },
+              "queryRef": "Accident.Fatal Accidents",
+              "nativeQueryRef": "Fatal Accidents"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Accident"
+                    }
+                  },
+                  "Property": "Fatal %"
+                }
+              },
+              "queryRef": "Accident.Fatal %",
+              "nativeQueryRef": "Fatal %",
+              "displayName": "Fatal share"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Accident"
+                  }
+                },
+                "Property": "Accidents"
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Detailed phases'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

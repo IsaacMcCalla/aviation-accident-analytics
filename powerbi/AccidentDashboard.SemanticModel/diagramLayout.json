@@ -1,0 +1,139 @@
+{
+  "version": "1.1.0",
+  "diagrams": [
+    {
+      "ordinal": 0,
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 397.6482027080213,
+            "y": 287.97896442929124
+          },
+          "nodeIndex": "Accident",
+          "nodeLineageTag": "d58ef78a-6ebd-5968-a51c-8a3f9ee825bd",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 763.89038379111412,
+            "y": 388.50680758745278
+          },
+          "nodeIndex": "Aircraft",
+          "nodeLineageTag": "6817f70e-92e5-5214-9c2d-3e8b93240930",
+          "size": {
+            "height": 200,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 606.55872116850242,
+            "y": 641.31726394635223
+          },
+          "nodeIndex": "Calendar",
+          "nodeLineageTag": "0028f5d3-b30d-50f1-8918-3b9162be2a55",
+          "size": {
+            "height": 224,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 100.41519351447761,
+            "y": 134.25825249367767
+          },
+          "nodeIndex": "Finding",
+          "nodeLineageTag": "5e9691b1-a8bc-50a8-a6be-e7fd5fbff139",
+          "size": {
+            "height": 224,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 997.89038379111412,
+            "y": 381.67112450743548
+          },
+          "nodeIndex": "Fleet",
+          "nodeLineageTag": "cf25b9ca-985e-5c91-9579-29fbdaf0af94",
+          "size": {
+            "height": 152,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 674.18673331747209,
+            "y": 58.8939075509893
+          },
+          "nodeIndex": "Operation",
+          "nodeLineageTag": "6ddf0a2d-7cbf-56ca-9757-ca90516ff896",
+          "size": {
+            "height": 176,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 387.44847560987188,
+            "y": -50
+          },
+          "nodeIndex": "Phase",
+          "nodeLineageTag": "4244e461-6416-5bb3-9e0f-517a9032609b",
+          "size": {
+            "height": 200,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 274.44260684707274,
+            "y": 641.34224901487107
+          },
+          "nodeIndex": "Tag",
+          "nodeLineageTag": "0c70cc96-6031-5b74-8525-68d6dcef9046",
+          "size": {
+            "height": 224,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 50,
+            "y": 436.80165428141072
+          },
+          "nodeIndex": "Weather",
+          "nodeLineageTag": "10e421f8-fa56-5aba-91c7-ec03b253dc8a",
+          "size": {
+            "height": 152,
+            "width": 234
+          },
+          "zIndex": 0
+        }
+      ],
+      "name": "All tables",
+      "zoomValue": 100,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    }
+  ],
+  "selectedDiagram": "All tables",
+  "defaultDiagram": "All tables"
+}

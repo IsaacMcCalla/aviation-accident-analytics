@@ -1,0 +1,5 @@
+requests>=2.31
+pyodbc>=5.0
+pandas>=2.0
+# optional, for nlp_narratives.py --top-terms
+# scikit-learn>=1.3

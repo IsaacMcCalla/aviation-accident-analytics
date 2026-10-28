@@ -1,0 +1,60 @@
+table Finding
+	lineageTag: 5e9691b1-a8bc-50a8-a6be-e7fd5fbff139
+
+	measure 'Accidents with Finding' = DISTINCTCOUNT(Finding[ev_id])
+		formatString: #,0
+		lineageTag: 5af5b8ef-2377-5ecc-bdc2-455d625e1fe0
+
+	column accident_key
+		dataType: int64
+		isHidden
+		lineageTag: 9db5906f-4516-5ce2-b87b-9bf0fb859b3f
+		summarizeBy: none
+		sourceColumn: accident_key
+
+		annotation SummarizationSetBy = User
+
+	column ev_id
+		dataType: string
+		isHidden
+		lineageTag: a2f28e02-ffe8-512b-a183-ae4592bb9d01
+		summarizeBy: none
+		sourceColumn: ev_id
+
+		annotation SummarizationSetBy = User
+
+	column finding_category
+		dataType: string
+		lineageTag: 8cb5a34c-94c9-5756-bfc2-63f9140afee6
+		summarizeBy: none
+		sourceColumn: finding_category
+
+		annotation SummarizationSetBy = User
+
+	column finding_description
+		dataType: string
+		lineageTag: a6492155-cd54-57cc-ba12-5c661c0737cd
+		summarizeBy: none
+		sourceColumn: finding_description
+
+		annotation SummarizationSetBy = User
+
+	column finding_role
+		dataType: string
+		lineageTag: a8879f37-ed3b-5055-8c3f-f7eee4ab0c93
+		summarizeBy: none
+		sourceColumn: finding_role
+
+		annotation SummarizationSetBy = User
+
+	partition Finding = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database(Server, Database),
+				    Data = Source{[Schema = "dbo", Item = "vw_pbi_finding"]}[Data]
+				in
+				    Data
+
+	annotation PBI_ResultType = Table
+

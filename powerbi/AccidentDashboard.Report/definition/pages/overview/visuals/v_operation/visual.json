@@ -1,0 +1,128 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
+  "name": "v_operation",
+  "position": {
+    "x": 799.73007839634806,
+    "y": 193.073335318051,
+    "z": 0,
+    "height": 500,
+    "width": 460
+  },
+  "visual": {
+    "visualType": "clusteredBarChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Operation"
+                    }
+                  },
+                  "Property": "operation_name"
+                }
+              },
+              "queryRef": "Operation.operation_name",
+              "nativeQueryRef": "operation_name",
+              "active": true,
+              "displayName": "Operation"
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Accident"
+                    }
+                  },
+                  "Property": "Accidents"
+                }
+              },
+              "queryRef": "Accident.Accidents",
+              "nativeQueryRef": "Accidents"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Accident"
+                  }
+                },
+                "Property": "Accidents"
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Accidents by type of operation'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "f660162a201c2d7aeb99",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Operation"
+              }
+            },
+            "Property": "operation_name"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "d5c6533092021dacb138",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Accident"
+              }
+            },
+            "Property": "Accidents"
+          }
+        },
+        "type": "Advanced"
+      }
+    ]
+  }
+}

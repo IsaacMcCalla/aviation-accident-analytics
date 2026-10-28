@@ -1,0 +1,57 @@
+table Tag
+	lineageTag: 0c70cc96-6031-5b74-8525-68d6dcef9046
+
+	measure 'Tagged Accidents' = DISTINCTCOUNT(Tag[ev_id])
+		formatString: #,0
+		lineageTag: 7dcd98cd-1c77-5b55-982b-336c01ce4a59
+
+	measure 'Tagged Fatal %' = DIVIDE(CALCULATE(DISTINCTCOUNT(Tag[ev_id]), Tag[is_fatal] = TRUE()), [Tagged Accidents])
+		formatString: 0.0%
+		lineageTag: 0483a09e-756e-569e-8225-b5f882d707d5
+
+	column accident_key
+		dataType: int64
+		isHidden
+		lineageTag: c83d0602-a371-564c-823e-dc63e130ba2f
+		summarizeBy: none
+		sourceColumn: accident_key
+
+		annotation SummarizationSetBy = User
+
+	column ev_id
+		dataType: string
+		isHidden
+		lineageTag: 49c67d81-21e8-5418-b8d8-a76b676d1d71
+		summarizeBy: none
+		sourceColumn: ev_id
+
+		annotation SummarizationSetBy = User
+
+	column is_fatal
+		dataType: boolean
+		isHidden
+		lineageTag: d6e742c1-2137-5c06-8a7b-6e22a9f9cb16
+		summarizeBy: none
+		sourceColumn: is_fatal
+
+		annotation SummarizationSetBy = User
+
+	column tag
+		dataType: string
+		lineageTag: 3ee0ecc1-1d8e-5328-806d-8ee06bba6ac4
+		summarizeBy: none
+		sourceColumn: tag
+
+		annotation SummarizationSetBy = User
+
+	partition Tag = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database(Server, Database),
+				    Data = Source{[Schema = "dbo", Item = "vw_pbi_tag"]}[Data]
+				in
+				    Data
+
+	annotation PBI_ResultType = Table
+

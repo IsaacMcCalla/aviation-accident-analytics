@@ -1,0 +1,34 @@
+table Fleet
+	lineageTag: cf25b9ca-985e-5c91-9579-29fbdaf0af94
+
+	measure 'Registered Aircraft' = CALCULATE(SUM(Fleet[registered_aircraft]), TREATAS(VALUES(Aircraft[make]), Fleet[make]))
+		formatString: #,0
+		lineageTag: e7a2ef7d-f96c-5853-8e3f-0826c5d9617a
+
+	column make
+		dataType: string
+		lineageTag: 92bd6d81-6b8c-5a58-a17d-355f40e45676
+		summarizeBy: none
+		sourceColumn: make
+
+		annotation SummarizationSetBy = User
+
+	column registered_aircraft
+		dataType: int64
+		lineageTag: ae46d0b0-fb95-525f-9c73-1ab948401319
+		summarizeBy: sum
+		sourceColumn: registered_aircraft
+
+		annotation SummarizationSetBy = User
+
+	partition Fleet = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database(Server, Database),
+				    Data = Source{[Schema = "dbo", Item = "vw_pbi_fleet"]}[Data]
+				in
+				    Data
+
+	annotation PBI_ResultType = Table
+

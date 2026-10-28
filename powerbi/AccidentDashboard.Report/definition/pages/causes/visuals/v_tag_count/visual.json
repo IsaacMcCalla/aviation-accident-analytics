@@ -1,0 +1,96 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
+  "name": "v_tag_count",
+  "position": {
+    "x": 20,
+    "y": 95,
+    "z": 0,
+    "height": 290,
+    "width": 615
+  },
+  "visual": {
+    "visualType": "clusteredBarChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Tag"
+                    }
+                  },
+                  "Property": "tag"
+                }
+              },
+              "queryRef": "Tag.tag",
+              "nativeQueryRef": "tag",
+              "active": true,
+              "displayName": "Tag"
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Tag"
+                    }
+                  },
+                  "Property": "Tagged Accidents"
+                }
+              },
+              "queryRef": "Tag.Tagged Accidents",
+              "nativeQueryRef": "Tagged Accidents"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Tag"
+                  }
+                },
+                "Property": "Tagged Accidents"
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Accidents by narrative tag (keyword rules; undercounts)'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

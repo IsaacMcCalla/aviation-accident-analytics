@@ -1,0 +1,281 @@
+table Accident
+	lineageTag: d58ef78a-6ebd-5968-a51c-8a3f9ee825bd
+
+	measure Accidents = DISTINCTCOUNT(Accident[ev_id])
+		formatString: #,0
+		lineageTag: eb45bfec-8ba9-549a-bae2-a1891d3720c3
+
+	measure 'Fatal Accidents' = CALCULATE(DISTINCTCOUNT(Accident[ev_id]), Accident[is_fatal] = TRUE())
+		formatString: #,0
+		lineageTag: 048b9a61-75f9-585c-a5d0-e843bb0076aa
+
+	measure 'Fatal %' = DIVIDE([Fatal Accidents], [Accidents])
+		formatString: 0.0%
+		lineageTag: 02bd0909-cca9-5ec0-a0f9-90360773aea0
+
+	measure Fatalities = CALCULATE(SUM(Accident[event_fatalities]), Accident[is_primary_aircraft] = TRUE())
+		formatString: #,0
+		lineageTag: 8c50e665-9682-5835-879c-11d7740c4331
+
+	measure 'Aircraft Involved' = COUNTROWS(Accident)
+		formatString: #,0
+		lineageTag: ae1580ea-e01f-567d-9df6-44f6a84ab588
+
+	measure 'Avg Latitude' = AVERAGE(Accident[latitude])
+		formatString: 0.000
+		lineageTag: 299880a9-5625-55ce-86d0-2ecde5d95f1d
+
+	measure 'Avg Longitude' = AVERAGE(Accident[longitude])
+		formatString: 0.000
+		lineageTag: 6ec64397-4ce6-54b1-99b8-a3e8072b5af7
+
+	measure 'Accidents per 1,000 Registered' = IF([Registered Aircraft] >= 100, DIVIDE([Accidents], [Registered Aircraft]) * 1000)
+		formatString: 0.0
+		lineageTag: 6b81fda4-31ab-54b3-821c-8729fa5d5051
+
+	column accident_key
+		dataType: int64
+		isHidden
+		lineageTag: b2436459-1025-5535-b351-b1cc68ffad8c
+		summarizeBy: none
+		sourceColumn: accident_key
+
+		annotation SummarizationSetBy = User
+
+	column ev_id
+		dataType: string
+		lineageTag: 6d2c1325-9f07-5d15-bb1d-cbf45dcba6e4
+		summarizeBy: none
+		sourceColumn: ev_id
+
+		annotation SummarizationSetBy = User
+
+	column ntsb_no
+		dataType: string
+		lineageTag: 34f8f936-a58e-548a-a787-39ccfa81235c
+		summarizeBy: none
+		sourceColumn: ntsb_no
+
+		annotation SummarizationSetBy = User
+
+	column ev_date
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: c4126ef0-2515-574b-9688-c99f73376b35
+		summarizeBy: none
+		sourceColumn: ev_date
+
+		annotation SummarizationSetBy = User
+
+	column date_key
+		dataType: int64
+		isHidden
+		lineageTag: 64a4eb7b-c3a0-5a3f-a1cf-a0da594632b9
+		summarizeBy: none
+		sourceColumn: date_key
+
+		annotation SummarizationSetBy = User
+
+	column ev_country
+		dataType: string
+		lineageTag: 77baf477-7f56-54f9-a3db-9070e64a1315
+		summarizeBy: none
+		sourceColumn: ev_country
+
+		annotation SummarizationSetBy = User
+
+	column ev_state
+		dataType: string
+		lineageTag: 3904b04c-81c2-5ec6-95c2-e480106a6502
+		summarizeBy: none
+		sourceColumn: ev_state
+
+		annotation SummarizationSetBy = User
+
+	column ev_city
+		dataType: string
+		lineageTag: 6767147b-8546-5a48-ae7c-cb7451c9ca48
+		summarizeBy: none
+		sourceColumn: ev_city
+
+		annotation SummarizationSetBy = User
+
+	column latitude
+		dataType: double
+		lineageTag: 88d82641-15ba-5e7d-838a-d93794e379c1
+		dataCategory: Latitude
+		summarizeBy: none
+		sourceColumn: latitude
+
+		annotation SummarizationSetBy = User
+
+	column longitude
+		dataType: double
+		lineageTag: 14fb4201-556b-587a-bd10-00a7a70bef2e
+		dataCategory: Longitude
+		summarizeBy: none
+		sourceColumn: longitude
+
+		annotation SummarizationSetBy = User
+
+	column is_us
+		dataType: boolean
+		lineageTag: 6262bba2-dfb1-5ff2-8158-f56cc55dfcf8
+		summarizeBy: none
+		sourceColumn: is_us
+
+		annotation SummarizationSetBy = User
+
+	column aircraft_dim_key
+		dataType: int64
+		isHidden
+		lineageTag: def1f15d-6966-5ba7-aa0c-1c766d6f7221
+		summarizeBy: none
+		sourceColumn: aircraft_dim_key
+
+		annotation SummarizationSetBy = User
+
+	column operation_key
+		dataType: int64
+		isHidden
+		lineageTag: d3a8beee-ca52-5b94-a733-52b6af35d504
+		summarizeBy: none
+		sourceColumn: operation_key
+
+		annotation SummarizationSetBy = User
+
+	column phase_key
+		dataType: int64
+		isHidden
+		lineageTag: 4d39d765-52c5-5d51-87ed-10c83d2bda39
+		summarizeBy: none
+		sourceColumn: phase_key
+
+		annotation SummarizationSetBy = User
+
+	column wx_cond_key
+		dataType: int64
+		isHidden
+		lineageTag: 1f4ac2e1-aab0-58f1-a6a0-5902297656cf
+		summarizeBy: none
+		sourceColumn: wx_cond_key
+
+		annotation SummarizationSetBy = User
+
+	column light_cond
+		dataType: string
+		lineageTag: 46edbea1-dd16-5963-9623-63df20ee6a13
+		summarizeBy: none
+		sourceColumn: light_cond
+
+		annotation SummarizationSetBy = User
+
+	column damage
+		dataType: string
+		lineageTag: 6680e7d8-1236-5ffe-9502-23fa63747ed0
+		summarizeBy: none
+		sourceColumn: damage
+
+		annotation SummarizationSetBy = User
+
+	column highest_injury
+		dataType: string
+		lineageTag: aecf828d-5bfb-50a0-ba66-1c6773fbafef
+		summarizeBy: none
+		sourceColumn: highest_injury
+
+		annotation SummarizationSetBy = User
+
+	column is_fatal
+		dataType: boolean
+		lineageTag: 679ab59e-9541-551a-9f42-57d6e908c955
+		summarizeBy: none
+		sourceColumn: is_fatal
+
+		annotation SummarizationSetBy = User
+
+	column event_fatalities
+		dataType: int64
+		lineageTag: 069df078-33a2-5fd9-a962-a6759603a013
+		summarizeBy: sum
+		sourceColumn: event_fatalities
+
+		annotation SummarizationSetBy = User
+
+	column is_primary_aircraft
+		dataType: boolean
+		lineageTag: 8c8969ba-63ce-54e8-8fe5-04446e76c34a
+		summarizeBy: none
+		sourceColumn: is_primary_aircraft
+
+		annotation SummarizationSetBy = User
+
+	column defining_event
+		dataType: string
+		lineageTag: 63ea1f01-97c2-5d71-b1aa-1ae446f7fe91
+		summarizeBy: none
+		sourceColumn: defining_event
+
+		annotation SummarizationSetBy = User
+
+	column pilot_age
+		dataType: int64
+		lineageTag: a01e30d1-6d12-596c-8d25-51b1258e0e6b
+		summarizeBy: none
+		sourceColumn: pilot_age
+
+		annotation SummarizationSetBy = User
+
+	column pilot_hours_band
+		dataType: string
+		lineageTag: 5a19a307-50be-5ef3-99a7-948347bdf432
+		summarizeBy: none
+		sourceColumn: pilot_hours_band
+		sortByColumn: pilot_hours_order
+
+		annotation SummarizationSetBy = User
+
+	column pilot_hours_order
+		dataType: int64
+		isHidden
+		lineageTag: da24fdbd-32fc-5051-a0e7-ce7f42088d75
+		summarizeBy: none
+		sourceColumn: pilot_hours_order
+
+		annotation SummarizationSetBy = User
+
+	column nearest_airport
+		dataType: string
+		lineageTag: 08eb1b0b-e131-5b86-a403-306e31b9464c
+		summarizeBy: none
+		sourceColumn: nearest_airport
+
+		annotation SummarizationSetBy = User
+
+	column nearest_airport_name
+		dataType: string
+		lineageTag: c5b4a5c5-e65e-5152-b58d-b5ec33921464
+		summarizeBy: none
+		sourceColumn: nearest_airport_name
+
+		annotation SummarizationSetBy = User
+
+	column probable_cause
+		dataType: string
+		lineageTag: 97450292-6f3c-5951-81cf-260a967e956d
+		summarizeBy: none
+		sourceColumn: probable_cause
+
+		annotation SummarizationSetBy = User
+
+	partition Accident = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database(Server, Database),
+				    Data = Source{[Schema = "dbo", Item = "vw_pbi_accident"]}[Data]
+				in
+				    Data
+
+	annotation PBI_ResultType = Table
+

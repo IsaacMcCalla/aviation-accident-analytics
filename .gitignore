@@ -1,0 +1,13 @@
+# raw downloads (NTSB .mdb, FAA registry, airports): large, re-downloadable
+/data/
+logs/
+.env
+__pycache__/
+*.pyc
+.venv/
+
+# web snapshot: accidents.db IS committed (the public site reads it); half-written exports are not
+web/data/*.tmp
+
+# Power BI Desktop's local cache and per-user settings (created when you save in Power BI)
+powerbi/**/.pbi/

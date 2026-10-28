@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "SemanticModel",
+    "displayName": "AccidentDashboard"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "bb5b618f-f9c3-45a2-9b1f-ddbba2de5245"
+  }
+}

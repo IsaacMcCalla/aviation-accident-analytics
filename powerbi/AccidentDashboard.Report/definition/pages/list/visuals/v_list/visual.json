@@ -1,0 +1,212 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
+  "name": "v_list",
+  "position": {
+    "x": 20,
+    "y": 95,
+    "z": 0,
+    "height": 605,
+    "width": 1240
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Accident"
+                    }
+                  },
+                  "Property": "ev_date"
+                }
+              },
+              "queryRef": "Accident.ev_date",
+              "nativeQueryRef": "ev_date",
+              "displayName": "Date"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Accident"
+                    }
+                  },
+                  "Property": "ntsb_no"
+                }
+              },
+              "queryRef": "Accident.ntsb_no",
+              "nativeQueryRef": "ntsb_no",
+              "displayName": "NTSB no."
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Accident"
+                    }
+                  },
+                  "Property": "ev_state"
+                }
+              },
+              "queryRef": "Accident.ev_state",
+              "nativeQueryRef": "ev_state",
+              "displayName": "State"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Accident"
+                    }
+                  },
+                  "Property": "ev_city"
+                }
+              },
+              "queryRef": "Accident.ev_city",
+              "nativeQueryRef": "ev_city",
+              "displayName": "City"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Aircraft"
+                    }
+                  },
+                  "Property": "make"
+                }
+              },
+              "queryRef": "Aircraft.make",
+              "nativeQueryRef": "make",
+              "displayName": "Make"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Aircraft"
+                    }
+                  },
+                  "Property": "model"
+                }
+              },
+              "queryRef": "Aircraft.model",
+              "nativeQueryRef": "model",
+              "displayName": "Model"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Phase"
+                    }
+                  },
+                  "Property": "phase_name"
+                }
+              },
+              "queryRef": "Phase.phase_name",
+              "nativeQueryRef": "phase_name",
+              "displayName": "Phase"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Accident"
+                    }
+                  },
+                  "Property": "highest_injury"
+                }
+              },
+              "queryRef": "Accident.highest_injury",
+              "nativeQueryRef": "highest_injury",
+              "displayName": "Highest injury"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Accident"
+                    }
+                  },
+                  "Property": "event_fatalities"
+                }
+              },
+              "queryRef": "Accident.event_fatalities",
+              "nativeQueryRef": "event_fatalities",
+              "displayName": "Fatalities"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Accident"
+                    }
+                  },
+                  "Property": "probable_cause"
+                }
+              },
+              "queryRef": "Accident.probable_cause",
+              "nativeQueryRef": "probable_cause",
+              "displayName": "Probable cause"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Accident"
+                  }
+                },
+                "Property": "probable_cause"
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Accidents (one row per aircraft)'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

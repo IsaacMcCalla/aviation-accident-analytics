@@ -1,0 +1,47 @@
+table Operation
+	lineageTag: 6ddf0a2d-7cbf-56ca-9757-ca90516ff896
+
+	column operation_key
+		dataType: int64
+		isHidden
+		lineageTag: 840615ac-a39a-5a2d-aad3-38fd1c639da1
+		summarizeBy: none
+		sourceColumn: operation_key
+
+		annotation SummarizationSetBy = User
+
+	column far_part
+		dataType: string
+		lineageTag: 3e2065bd-91bf-568e-abc5-fccfb434a946
+		summarizeBy: none
+		sourceColumn: far_part
+
+		annotation SummarizationSetBy = User
+
+	column operation_name
+		dataType: string
+		lineageTag: d7eecb25-fd71-5faa-ada6-445380771d90
+		summarizeBy: none
+		sourceColumn: operation_name
+
+		annotation SummarizationSetBy = User
+
+	column is_general_aviation
+		dataType: boolean
+		lineageTag: 12ea19e9-3f25-5c4e-b991-060ec5e09f7c
+		summarizeBy: none
+		sourceColumn: is_general_aviation
+
+		annotation SummarizationSetBy = User
+
+	partition Operation = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database(Server, Database),
+				    Data = Source{[Schema = "dbo", Item = "vw_pbi_operation"]}[Data]
+				in
+				    Data
+
+	annotation PBI_ResultType = Table
+

@@ -1,0 +1,100 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
+  "name": "v_scatter",
+  "position": {
+    "x": 20,
+    "y": 95,
+    "z": 0,
+    "height": 605,
+    "width": 1240
+  },
+  "visual": {
+    "visualType": "scatterChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Accident"
+                    }
+                  },
+                  "Property": "accident_key"
+                }
+              },
+              "queryRef": "Accident.accident_key",
+              "nativeQueryRef": "accident_key",
+              "active": true,
+              "displayName": "Accident"
+            }
+          ]
+        },
+        "X": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Accident"
+                    }
+                  },
+                  "Property": "Avg Longitude"
+                }
+              },
+              "queryRef": "Accident.Avg Longitude",
+              "nativeQueryRef": "Avg Longitude",
+              "active": true,
+              "displayName": "Longitude"
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Accident"
+                    }
+                  },
+                  "Property": "Avg Latitude"
+                }
+              },
+              "queryRef": "Accident.Avg Latitude",
+              "nativeQueryRef": "Avg Latitude",
+              "displayName": "Latitude"
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Accident locations (longitude vs. latitude; large selections are sampled)'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

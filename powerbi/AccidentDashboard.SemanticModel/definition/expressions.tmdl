@@ -1,0 +1,10 @@
+expression Server = "localhost" meta [IsParameterQuery = true, Type = "Text", IsParameterQueryRequired = true]
+	lineageTag: 3a4b23c7-28c6-5dd0-84e1-2503b4320bd9
+
+	annotation PBI_ResultType = Text
+
+expression Database = "AviationSafety" meta [IsParameterQuery = true, Type = "Text", IsParameterQueryRequired = true]
+	lineageTag: 86e465e8-0fef-520e-b1ab-52d5d58dfef8
+
+	annotation PBI_ResultType = Text
+

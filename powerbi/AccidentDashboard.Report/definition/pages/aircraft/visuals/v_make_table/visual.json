@@ -1,0 +1,120 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
+  "name": "v_make_table",
+  "position": {
+    "x": 20,
+    "y": 95,
+    "z": 0,
+    "height": 605,
+    "width": 760
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Aircraft"
+                    }
+                  },
+                  "Property": "make"
+                }
+              },
+              "queryRef": "Aircraft.make",
+              "nativeQueryRef": "make",
+              "displayName": "Make"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Accident"
+                    }
+                  },
+                  "Property": "Accidents"
+                }
+              },
+              "queryRef": "Accident.Accidents",
+              "nativeQueryRef": "Accidents"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Fleet"
+                    }
+                  },
+                  "Property": "Registered Aircraft"
+                }
+              },
+              "queryRef": "Fleet.Registered Aircraft",
+              "nativeQueryRef": "Registered Aircraft"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Accident"
+                    }
+                  },
+                  "Property": "Accidents per 1,000 Registered"
+                }
+              },
+              "queryRef": "Accident.Accidents per 1,000 Registered",
+              "nativeQueryRef": "Accidents per 1,000 Registered",
+              "displayName": "Per 1,000 registered"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Accident"
+                  }
+                },
+                "Property": "Accidents"
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Accidents vs. today''s registered fleet (exact make-name match; rate shown for 100+ registered)'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

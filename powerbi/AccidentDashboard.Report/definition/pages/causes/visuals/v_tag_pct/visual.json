@@ -1,0 +1,97 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
+  "name": "v_tag_pct",
+  "position": {
+    "x": 645,
+    "y": 95,
+    "z": 0,
+    "height": 290,
+    "width": 615
+  },
+  "visual": {
+    "visualType": "clusteredBarChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Tag"
+                    }
+                  },
+                  "Property": "tag"
+                }
+              },
+              "queryRef": "Tag.tag",
+              "nativeQueryRef": "tag",
+              "active": true,
+              "displayName": "Tag"
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Tag"
+                    }
+                  },
+                  "Property": "Tagged Fatal %"
+                }
+              },
+              "queryRef": "Tag.Tagged Fatal %",
+              "nativeQueryRef": "Tagged Fatal %",
+              "displayName": "Fatal share"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Tag"
+                  }
+                },
+                "Property": "Tagged Fatal %"
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Fatal share by narrative tag'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

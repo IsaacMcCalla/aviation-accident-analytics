@@ -1,0 +1,28 @@
+relationship 5c6148e7-d35f-598f-935a-04ed9e6f00e5
+	fromColumn: Accident.date_key
+	toColumn: Calendar.date_key
+
+relationship 25bb7e2b-0319-5887-a14a-9004afaef877
+	fromColumn: Accident.aircraft_dim_key
+	toColumn: Aircraft.aircraft_dim_key
+
+relationship 10d131c3-bba9-5db4-b767-03d59a85dcc2
+	fromColumn: Accident.operation_key
+	toColumn: Operation.operation_key
+
+relationship da508aac-693c-5dc1-b0d8-41cd46165007
+	fromColumn: Accident.phase_key
+	toColumn: Phase.phase_key
+
+relationship bec85a6a-696a-56c8-bf57-e143577f1ff0
+	fromColumn: Accident.wx_cond_key
+	toColumn: Weather.wx_cond_key
+
+relationship 02b97989-de95-507b-b0cb-d9a3678154bb
+	fromColumn: Tag.accident_key
+	toColumn: Accident.accident_key
+
+relationship d562c885-4c24-580f-86e6-ecbc460f9959
+	fromColumn: Finding.accident_key
+	toColumn: Accident.accident_key
+

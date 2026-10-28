@@ -1,0 +1,3 @@
+# normalize text files; never touch the SQLite snapshot's bytes
+* text=auto
+*.db binary

@@ -1,0 +1,66 @@
+table Calendar
+	lineageTag: 0028f5d3-b30d-50f1-8918-3b9162be2a55
+	dataCategory: Time
+
+	column date_key
+		dataType: int64
+		isHidden
+		lineageTag: 35af5dee-03a0-5d35-81b7-b5d5398dda49
+		summarizeBy: none
+		sourceColumn: date_key
+
+		annotation SummarizationSetBy = User
+
+	column full_date
+		dataType: dateTime
+		isKey
+		formatString: yyyy-mm-dd
+		lineageTag: d626f9e6-b108-5d2f-be50-c5cecf97e24e
+		summarizeBy: none
+		sourceColumn: full_date
+
+		annotation SummarizationSetBy = User
+
+	column year
+		dataType: int64
+		lineageTag: 56c1dea2-d506-5cec-b147-d0d00fcd5418
+		summarizeBy: none
+		sourceColumn: year
+
+		annotation SummarizationSetBy = User
+
+	column quarter
+		dataType: int64
+		lineageTag: 4845a577-f4a1-5350-88e1-3744d8761f78
+		summarizeBy: none
+		sourceColumn: quarter
+
+		annotation SummarizationSetBy = User
+
+	column month
+		dataType: int64
+		lineageTag: fac2d177-db6d-515a-a0f8-2f257e768053
+		summarizeBy: none
+		sourceColumn: month
+
+		annotation SummarizationSetBy = User
+
+	column decade
+		dataType: int64
+		lineageTag: 1b81d9be-8068-558a-9e2b-598a968ca01e
+		summarizeBy: none
+		sourceColumn: decade
+
+		annotation SummarizationSetBy = User
+
+	partition Calendar = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database(Server, Database),
+				    Data = Source{[Schema = "dbo", Item = "vw_pbi_calendar"]}[Data]
+				in
+				    Data
+
+	annotation PBI_ResultType = Table
+

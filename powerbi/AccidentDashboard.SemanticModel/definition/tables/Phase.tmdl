@@ -1,0 +1,57 @@
+table Phase
+	lineageTag: 4244e461-6416-5bb3-9e0f-517a9032609b
+
+	column phase_key
+		dataType: int64
+		isHidden
+		lineageTag: 4641ce74-e56f-524f-9df4-e4e95f5e1383
+		summarizeBy: none
+		sourceColumn: phase_key
+
+		annotation SummarizationSetBy = User
+
+	column phase_code
+		dataType: string
+		lineageTag: f946c6d4-9fc2-5a14-b08f-d14792042d52
+		summarizeBy: none
+		sourceColumn: phase_code
+
+		annotation SummarizationSetBy = User
+
+	column phase_name
+		dataType: string
+		lineageTag: 7d594193-bcb2-5ed5-800c-63a3e4b92c95
+		summarizeBy: none
+		sourceColumn: phase_name
+
+		annotation SummarizationSetBy = User
+
+	column phase_group
+		dataType: string
+		lineageTag: 1bbc14dc-4d32-516c-8d04-c46c86fc0395
+		summarizeBy: none
+		sourceColumn: phase_group
+		sortByColumn: phase_group_order
+
+		annotation SummarizationSetBy = User
+
+	column phase_group_order
+		dataType: int64
+		isHidden
+		lineageTag: 8aa1a32f-815e-5848-9ea7-46f5277b5ecb
+		summarizeBy: none
+		sourceColumn: phase_group_order
+
+		annotation SummarizationSetBy = User
+
+	partition Phase = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database(Server, Database),
+				    Data = Source{[Schema = "dbo", Item = "vw_pbi_phase"]}[Data]
+				in
+				    Data
+
+	annotation PBI_ResultType = Table
+

@@ -1,0 +1,55 @@
+table Aircraft
+	lineageTag: 6817f70e-92e5-5214-9c2d-3e8b93240930
+
+	column aircraft_dim_key
+		dataType: int64
+		isHidden
+		lineageTag: 367e707a-d5cf-5cd2-ba88-6a4aeff7a0c7
+		summarizeBy: none
+		sourceColumn: aircraft_dim_key
+
+		annotation SummarizationSetBy = User
+
+	column make
+		dataType: string
+		lineageTag: b29935c2-efcc-5e29-a6b6-75c549e9aa50
+		summarizeBy: none
+		sourceColumn: make
+
+		annotation SummarizationSetBy = User
+
+	column model
+		dataType: string
+		lineageTag: 514604dd-7517-53f9-93bb-a294c289b554
+		summarizeBy: none
+		sourceColumn: model
+
+		annotation SummarizationSetBy = User
+
+	column acft_category
+		dataType: string
+		lineageTag: b94e4dc9-bc47-5a80-a05c-730360e0e0f5
+		summarizeBy: none
+		sourceColumn: acft_category
+
+		annotation SummarizationSetBy = User
+
+	column num_eng
+		dataType: int64
+		lineageTag: 890c7168-db8f-5730-8b87-1231585f5c62
+		summarizeBy: none
+		sourceColumn: num_eng
+
+		annotation SummarizationSetBy = User
+
+	partition Aircraft = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database(Server, Database),
+				    Data = Source{[Schema = "dbo", Item = "vw_pbi_aircraft"]}[Data]
+				in
+				    Data
+
+	annotation PBI_ResultType = Table
+
