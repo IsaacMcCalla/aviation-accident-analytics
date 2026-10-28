@@ -6,6 +6,8 @@ An end-to-end data project on U.S. civil aviation accidents: extract the NTSB ac
 
 **Question it answers:** what patterns show up in U.S. aviation accidents (phase of flight, weather, aircraft, pilot experience, type of operation), and how have accident and fatality rates changed over time?
 
+**Live dashboard:** https://jsaviationanalytics.streamlit.app/
+
 > Status: in progress. Replace this line with your key finding once done.
 
 ## Architecture
@@ -98,7 +100,7 @@ To change the layout permanently, edit `build_pbip.py` and regenerate, or edit i
 
 ## Web dashboard (Docker)
 
-`web/` serves a web version of the dashboard at http://localhost:8080 from a Docker container, built from a snapshot that `src/export_web_data.py` exports after each update. See [web/README.md](web/README.md).
+`web/` holds a web version of the dashboard, built from a snapshot that `src/export_web_data.py` exports after each update. It runs two ways: publicly at https://jsaviationanalytics.streamlit.app/ (Streamlit Community Cloud, updated with `.\publish_web.ps1`), and locally at http://localhost:8080 from a Docker container. See [web/README.md](web/README.md).
 
 ## Findings (fill in after analysis)
 

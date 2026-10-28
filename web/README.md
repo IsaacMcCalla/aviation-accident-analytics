@@ -40,7 +40,7 @@ Reload the page. No rebuild or restart is needed: the app notices the new file.
 
 ## Public site (Streamlit Community Cloud)
 
-The same `app.py` also runs on Streamlit Community Cloud, deployed from this repository's GitHub copy (main file `web/app.py`; it installs `web/requirements.txt`). `web/data/accidents.db` is committed so the cloud copy has data.
+Live at **https://jsaviationanalytics.streamlit.app/**. The same `app.py` runs on Streamlit Community Cloud, deployed from this repository's GitHub copy (main file `web/app.py`; it installs `web/requirements.txt`). `web/data/accidents.db` is committed so the cloud copy has data.
 
 To publish a monthly update, run this from the project folder after the usual update steps:
 
