@@ -1,0 +1,22 @@
+# Image for Azure Container Apps (built by .github/workflows/deploy.yml).
+# Same as Dockerfile, except the data snapshot is baked in: a cloud host has no folder to mount,
+# so each publish (a push that changes web/data/accidents.db) builds a new image.
+# Its ignore file is Dockerfile.cloud.dockerignore (which, unlike .dockerignore, lets data/ in).
+FROM python:3.12-slim
+
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY .streamlit/ .streamlit/
+COPY app.py .
+COPY data/accidents.db data/accidents.db
+
+# run as an unprivileged user rather than root
+RUN useradd --create-home appuser
+USER appuser
+
+EXPOSE 8501
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8501/_stcore/health')"
+CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
