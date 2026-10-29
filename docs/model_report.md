@@ -17,7 +17,7 @@ This is about how bad an accident is once it happens, not how likely a flight is
 | Model | ROC AUC | PR AUC | Brier score |
 | --- | --- | --- | --- |
 | Logistic regression | 0.837 | 0.588 | 0.100 |
-| Gradient boosting | 0.843 | 0.596 | 0.100 |
+| Gradient boosting | 0.843 | 0.599 | 0.100 |
 | Baseline (always guess the average) | 0.500 | 0.167 | 0.139 |
 
 ROC AUC is the chance the model ranks a random fatal accident above a random non-fatal one (0.5 = guessing, 1.0 = perfect).
@@ -59,19 +59,19 @@ Drop in test ROC AUC when each input is shuffled (bigger = the model relies on i
 
 | Input | AUC drop |
 | --- | --- |
-| Phase of flight | 0.212 |
-| Narrative: stall | 0.018 |
+| Phase of flight | 0.205 |
+| Narrative: stall | 0.021 |
 | Narrative: engine power loss | 0.011 |
+| Weather (NTSB) | 0.011 |
 | Narrative: loss of control | 0.010 |
-| Weather (NTSB) | 0.009 |
 | Engines | 0.007 |
-| Type of operation | 0.006 |
-| Narrative: spatial disorientation | 0.005 |
-| Narrative: fuel exhaustion | 0.005 |
+| Narrative: fuel exhaustion | 0.006 |
 | Narrative: impairment | 0.005 |
+| Type of operation | 0.005 |
+| Narrative: spatial disorientation | 0.005 |
 
 ## Read with care
 
 - These are associations, not causes. Phase, weather and accident type are linked to each other and to things the data does not record (speed and angle at impact, terrain, survival equipment).
 - Narrative tags come from the investigators' text and keyword rules that undercount; older narratives are terser.
-- Weather is the NTSB investigator's VMC/IMC call only; observed station weather is on hold (see `enrich_weather.py`).
+- Weather is the NTSB investigator's VMC/IMC call only. Observed station weather (`enrich_weather.py`) does not cover every year yet, so the model leaves it out.

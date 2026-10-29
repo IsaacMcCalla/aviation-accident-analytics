@@ -60,6 +60,12 @@ def test_child_rows_point_at_accidents(lite):
                      "(SELECT category_id FROM finding_categories)") == 0
 
 
+def test_observed_weather_is_valid_and_us_only(lite):
+    assert one(lite, "SELECT COUNT(*) FROM accidents WHERE observed_category IS NOT NULL "
+                     "AND observed_category NOT IN ('VFR', 'MVFR', 'IFR', 'LIFR')") == 0
+    assert one(lite, "SELECT COUNT(*) FROM accidents WHERE observed_category IS NOT NULL AND is_us = 0") == 0
+
+
 def test_model_scores_are_sensible(lite):
     lr, gb = lite.execute("SELECT lr_roc_auc, gb_roc_auc FROM model_run").fetchone()
     assert 0.7 < lr <= 1 and 0.7 < gb <= 1

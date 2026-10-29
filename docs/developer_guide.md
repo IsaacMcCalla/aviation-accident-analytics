@@ -57,7 +57,7 @@ Live site: https://jsaviationanalytics.streamlit.app/ · Repository: https://git
 | `src/download_ntsb.py` | Downloads `avall.zip` (default) or `Pre2008.zip` (`--file Pre2008`) from the NTSB and extracts the `.mdb` into `data/ntsb/` |
 | `src/extract_ntsb.py` | Copies NTSB tables from one or more Access files (or mdbtools CSVs) into `stg_ntsb_*`, newest file first; an event in two files is loaded once. The `TABLES` dict maps source tables and columns to staging |
 | `src/load_ga_hours.py` | Loads `reference/ga_activity_bts_table_2_14.csv` (FAA flight hours and NTSB published GA counts) into `ref_ga_hours` |
-| `src/enrich_weather.py` | Matches U.S. accidents to the nearest station's weather report (IEM archive) in `fact_event_weather`. **On hold**: see 6.4 |
+| `src/enrich_weather.py` | Matches U.S. accidents to the nearest station's weather report (IEM archive) in `fact_event_weather`. **Paused at 1998**: see 6.4 |
 | `src/model_fatality.py` | Fits the fatality model; writes `model_fatality_factor`, `model_run` and `docs/model_report.md` |
 | `src/load_faa_registry.py` | Loads FAA `MASTER.txt` and `ACFTREF.txt` (aircraft fields only; registrant names and addresses are skipped on purpose) |
 | `src/load_airports.py` | Loads U.S. airports from OurAirports into `stg_airports` |
@@ -246,9 +246,11 @@ BTS updates *National Transportation Statistics* Table 2-14 (https://www.bts.gov
 
 ### 6.4 Weather enrichment (on hold)
 
-`src/enrich_weather.py` matches each U.S. accident to the nearest weather station's report at the time (Iowa Environmental Mesonet archive). A first run was stopped part-way, so `fact_event_weather` covers only 1982 to early 1984. Nothing reads that table yet: `model_fatality.py` has `USE_STATION_WEATHER = False`, and the web export ignores it.
+`src/enrich_weather.py` matches each U.S. accident to the nearest weather station's report at the time (Iowa Environmental Mesonet archive). It works through accidents oldest first and was paused part-way, so `fact_event_weather` covers **1982 to 1998** (34,061 accidents, 72% matched to a report, on average 19 km and 16 minutes away).
 
-To resume: run `.venv\Scripts\python.exe src\enrich_weather.py` (about 90 minutes for the rest; it continues where it stopped and then fetches only new accidents each month). Then set `USE_STATION_WEATHER = True`, re-run the model, and add the columns you want to the web export.
+What uses it now: the web export adds the observed flight category, ceiling, visibility and wind to each accident, and the **Weather and pilot** tab shows them, labeled with the years covered (worked out from the data, so the label updates itself). What doesn't: the model (`USE_STATION_WEATHER = False` in `model_fatality.py`) and the findings. With weather for only some years, the weather inputs would partly stand in for the era.
+
+To finish: run `.venv\Scripts\python.exe src\enrich_weather.py` (about 70 minutes for 1999 onward; it continues where it stopped, and afterwards fetches only new accidents each month, so add it to the monthly steps). Then set `USE_STATION_WEATHER = True`, re-run the model, and re-export.
 
 ---
 

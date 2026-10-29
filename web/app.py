@@ -17,6 +17,7 @@ DB = os.environ.get("ACCIDENT_DB", os.path.join(os.path.dirname(__file__), "data
 COLOR = "#0f9d8a"
 FATAL_COLOR = "#e07a5f"   # readable on both the light and dark themes
 WEATHER = {"VMC": "Visual (VMC)", "IMC": "Instrument (IMC)", "UNK": "Unknown"}
+FLIGHT_CATEGORIES = ["VFR", "MVFR", "IFR", "LIFR"]   # best to worst
 
 st.set_page_config(page_title="Aviation Accidents", page_icon="✈️", layout="wide")
 
@@ -294,6 +295,31 @@ with tabs[5]:
     with right:
         bar(hours, "pilot_hours_band", "fatal_share", "Fatal share by pilot total flight hours", sort=hours_order,
             fmt=".1%", horizontal=False)
+
+    # Observed weather: the nearest station's report at the time (U.S. accidents only)
+    if "observed_category" in f.columns:
+        observed = f[f["observed_category"].notna()]
+        matched = acc[acc["observed_category"].notna()]["year"]
+        # station matching may not cover every year yet (enrich_weather.py runs incrementally)
+        y0, y1 = (int(matched.min()), int(matched.max())) if len(matched) else (0, 0)
+        us = f[(f["is_us"] == 1) & f["year"].between(y0, y1)]["ev_id"].nunique()
+        st.markdown(f"**Observed weather at the nearest station** (within 40 km and 90 minutes of the accident). "
+                    f"Station reports have been matched for accidents from **{y0} to {y1}** so far.")
+        if len(observed):
+            cats = by(observed, "observed_category")
+            left, right = st.columns(2)
+            with left:
+                bar(cats, "observed_category", "fatal_share", "Fatal share by observed category", fmt=".1%",
+                    sort=FLIGHT_CATEGORIES, horizontal=False)
+            with right:
+                bar(cats, "observed_category", "accidents", "Accidents by observed category",
+                    sort=FLIGHT_CATEGORIES, horizontal=False)
+            st.caption(f"{observed['ev_id'].nunique():,} of {us:,} U.S. accidents in the selection from {y0} to {y1} "
+                       "matched a station report. VFR: ceiling above 3,000 ft and visibility over 5 miles; MVFR: marginal; IFR: ceiling "
+                       "under 1,000 ft or visibility under 3 miles; LIFR: under 500 ft or 1 mile. The station can be "
+                       "up to 40 km away, so conditions at the site may differ.")
+        else:
+            st.caption("No accidents in the selection matched a station report.")
 
 # ---------------------------------------------------------------- map
 with tabs[6]:

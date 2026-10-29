@@ -212,7 +212,7 @@ Drop in test ROC AUC when each input is shuffled (bigger = the model relies on i
 
 - These are associations, not causes. Phase, weather and accident type are linked to each other and to things the data does not record (speed and angle at impact, terrain, survival equipment).
 - Narrative tags come from the investigators' text and keyword rules that undercount; older narratives are terser.
-{'- Observed weather is from the nearest station, up to 40 km away and 90 minutes from the accident; conditions at the site can differ.' if USE_STATION_WEATHER else '- Weather is the NTSB investigator' + chr(39) + 's VMC/IMC call only; observed station weather is on hold (see `enrich_weather.py`).'}
+{'- Observed weather is from the nearest station, up to 40 km away and 90 minutes from the accident; conditions at the site can differ.' if USE_STATION_WEATHER else '- Weather is the NTSB investigator' + chr(39) + 's VMC/IMC call only. Observed station weather (`enrich_weather.py`) does not cover every year yet, so the model leaves it out.'}
 """
     with open(REPORT, "w", encoding="utf-8") as f:
         f.write(text)

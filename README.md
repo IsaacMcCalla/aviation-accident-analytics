@@ -77,7 +77,7 @@ Then follow [section 4 of the guide](docs/developer_guide.md#4-first-full-build)
 | FAA aircraft registry (`ReleasableAircraft.zip`) | Registered fleet by manufacturer | Aircraft fields only; registrant names and addresses are not loaded |
 | OurAirports `airports.csv` | Airport names and coordinates | Public domain; joined on the FAA identifier |
 | BTS *National Transportation Statistics* Table 2-14 | FAA general aviation flight hours and the NTSB's published GA counts, by year | Copied into `reference/` with its sources; used for rates and to validate this project's counts |
-| Iowa Environmental Mesonet ASOS archive | Weather reported at the nearest station at the time of each accident | **On hold**: partly loaded, not yet used (developer guide 6.4) |
+| Iowa Environmental Mesonet ASOS archive | Weather reported at the nearest station at the time of each accident | **Partly loaded (1982–1998)**: shown in the web app, not yet used by the model (developer guide 6.4) |
 
 ## Additional Information
 
@@ -97,4 +97,4 @@ Then follow [section 4 of the guide](docs/developer_guide.md#4-first-full-build)
 - Recent events can still be preliminary, without a probable cause or findings.
 - Make names are as reported (one manufacturer can appear under several spellings, and amateur-built aircraft list the builder's name), and FAA fleet counts reflect today's registry, not the fleet in the accident year.
 - Narrative tags are keyword rules that undercount; spot-check them before quoting numbers. Correlation is not causation, and the model describes how severe accidents are, not what causes them.
-- Weather is the NTSB investigator's VMC/IMC call. Observed station weather is on hold.
+- Weather in the findings and the model is the NTSB investigator's VMC/IMC call. Observed station weather so far covers 1982–1998 and appears only on the web app's Weather and pilot tab.

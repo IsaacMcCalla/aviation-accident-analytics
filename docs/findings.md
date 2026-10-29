@@ -78,5 +78,5 @@ Full method and every factor: [model_report.md](model_report.md).
 ## Limits
 
 - These are associations in accident records, not causes, and they describe how bad an accident is once it happens. Accident *risk* per flight needs exposure data by type of flying, which does not exist at this detail.
-- The weather call is the NTSB investigator's VMC/IMC classification. Matching each accident to observed station weather (`src/enrich_weather.py`) is on hold.
+- The weather call is the NTSB investigator's VMC/IMC classification. Observed station weather (`src/enrich_weather.py`) covers 1982–1998 so far and points the same way: 15.9% of accidents in observed VFR were fatal, against 43.4% in IFR and 48.0% in LIFR.
 - Coverage before 2008 uses the NTSB's older coding. Its cause codes are kept separate rather than mapped to the 2008+ taxonomy.

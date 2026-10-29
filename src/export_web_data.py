@@ -32,8 +32,12 @@ QUERIES = {
                CAST(a.is_primary_aircraft AS int) AS is_primary_aircraft,
                a.pilot_hours_band, a.pilot_hours_order, a.nearest_airport, a.probable_cause,
                CASE WHEN EXISTS (SELECT 1 FROM dbo.vw_ga_accident g WHERE g.accident_key = a.accident_key)
-                    THEN 1 ELSE 0 END AS is_ga
+                    THEN 1 ELSE 0 END AS is_ga,
+               wx.flight_category AS observed_category, wx.ceiling_ft AS observed_ceiling_ft,
+               wx.visibility_sm AS observed_visibility_sm, wx.wind_kt AS observed_wind_kt,
+               wx.gust_kt AS observed_gust_kt
         FROM dbo.vw_pbi_accident a
+        LEFT JOIN dbo.fact_event_weather wx ON wx.ev_id = a.ev_id   -- nearest station's report (enrich_weather.py)
         JOIN dbo.vw_pbi_calendar c   ON c.date_key = a.date_key
         JOIN dbo.vw_pbi_aircraft ac  ON ac.aircraft_dim_key = a.aircraft_dim_key
         JOIN dbo.vw_pbi_operation o  ON o.operation_key = a.operation_key
