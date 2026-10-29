@@ -54,6 +54,8 @@ git push ──> GitHub Actions "deploy" workflow: test ──> build Dockerfile
 | Deploys | `.github/workflows/deploy.yml` | Runs on any push that changes `web/`. Signs in to Azure with OpenID Connect through the `github-aviation-deploy` identity, which can change only this one app (set up by `deploy/link_github_to_azure.ps1`) |
 | Cost | Container Apps consumption plan, with Azure's free monthly allowance | Scale to zero: nothing runs, and nothing is billed, while nobody is visiting. Budget `aviation-monthly` emails the subscription owner at 50% and 100% of $5 a month, and when the forecast passes $5 |
 
+**Backup copy.** The earlier Streamlit Community Cloud deployment still runs at https://jsaviationanalytics.streamlit.app/. It redeploys from this repository on every push (main file `web/app.py`, data from the committed snapshot), so it stays in step with Azure at no cost. To retire it: share.streamlit.io → the app's **⋮** menu → **Delete**. Nothing in the repository depends on it.
+
 **Cold start.** After a quiet spell the app has scaled to zero, so the first visitor waits about 10–20 seconds while it starts. Later visitors get it immediately. To keep one copy always running (no wait, but billed around the clock), set `--min-replicas 1`.
 
 To publish a monthly update, run this from the project folder after the usual update steps:
