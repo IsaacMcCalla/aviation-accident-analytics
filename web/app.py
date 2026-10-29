@@ -15,7 +15,8 @@ import streamlit as st
 
 DB = os.environ.get("ACCIDENT_DB", os.path.join(os.path.dirname(__file__), "data", "accidents.db"))
 COLOR = "#0f9d8a"
-FATAL_COLOR = "#33415c"
+FATAL_COLOR = "#e07a5f"   # readable on both the light and dark themes
+WEATHER = {"VMC": "Visual (VMC)", "IMC": "Instrument (IMC)", "UNK": "Unknown"}
 
 st.set_page_config(page_title="Aviation Accidents", page_icon="✈️", layout="wide")
 
@@ -25,7 +26,14 @@ def load(mtime: float) -> dict:
     """Load every table; mtime is part of the cache key, so a new export is picked up on the next page load."""
     with closing(sqlite3.connect(f"file:{DB}?mode=ro", uri=True)) as conn:
         names = [r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")]
-        return {name: pd.read_sql(f"SELECT * FROM {name}", conn) for name in names}
+        data = {name: pd.read_sql(f"SELECT * FROM {name}", conn) for name in names}
+    # The export stores codes and keys only, to keep the file small; restore names and ev_id here
+    acc = data["accidents"]
+    acc["weather"] = acc["weather"].map(WEATHER).fillna("Unknown")
+    ev_ids = acc[["accident_key", "ev_id"]]
+    data["tags"] = data["tags"].merge(ev_ids, on="accident_key")
+    data["findings"] = data["findings"].merge(data["finding_categories"], on="category_id").merge(ev_ids, on="accident_key")
+    return data
 
 
 def accident_stats(df: pd.DataFrame) -> dict:
@@ -45,12 +53,18 @@ def by(df: pd.DataFrame, column: str) -> pd.DataFrame:
     return g
 
 
+def phrase(name: str) -> str:
+    """Lower-case a label for use mid-sentence, unless it contains an acronym (VFR, IMC)."""
+    return name if any(len(w) > 1 and w.isupper() for w in name.split()) else name.lower()
+
+
 def bar(data: pd.DataFrame, category: str, value: str, title: str, sort=None, fmt=",.0f", horizontal=True):
     """Bar chart sorted largest first by default; pass sort=[...] for a fixed category order."""
     sort = sort or ("-x" if horizontal else "-y")
     axis = alt.Axis(format=".0%") if fmt.endswith("%") else alt.Axis(format="~s")
     if horizontal:
-        enc = {"y": alt.Y(f"{category}:N", sort=sort, title=None), "x": alt.X(f"{value}:Q", title=None, axis=axis)}
+        enc = {"y": alt.Y(f"{category}:N", sort=sort, title=None, axis=alt.Axis(labelLimit=260)),
+               "x": alt.X(f"{value}:Q", title=None, axis=axis)}
     else:
         enc = {"x": alt.X(f"{category}:N", sort=sort, title=None, axis=alt.Axis(labelAngle=0)),
                "y": alt.Y(f"{value}:Q", title=None, axis=axis)}
@@ -83,13 +97,118 @@ if operations:
 keys = set(f["accident_key"])
 
 st.title("Aviation Accidents")
-st.caption("NTSB accident data, 2008 to present. One accident can involve more than one aircraft; "
+st.caption("NTSB accident data, 1982 to present. One accident can involve more than one aircraft; "
            "counts here are accidents (a midair collision counts once).")
 
-tabs = st.tabs(["Overview", "Phase of flight", "Causes", "Aircraft", "Weather and pilot", "Map", "Accident list"])
+tabs = st.tabs(["Findings", "Overview", "Phase of flight", "Causes", "Aircraft", "Weather and pilot", "Map",
+                "Accident list"])
+
+# ---------------------------------------------------------------- findings
+with tabs[0]:
+    ga = acc[(acc["is_ga"] == 1) & (acc["is_primary_aircraft"] == 1)]
+    st.markdown(f"**Key findings for U.S. general aviation** ({ga['ev_id'].nunique():,} accidents, "
+                f"{int(ga['year'].min())} to {meta['latest_event'][:4]}). These use every year and ignore the sidebar "
+                "filters. General aviation is civil flying other than airlines and charter (Parts 121 and 135).")
+
+    # 1. Rates: the NTSB's published counts over FAA flight-hour estimates
+    # keep years without flight hours as empty values, so the line shows a gap instead of bridging it
+    rates = data["rates"][data["rates"]["year"].between(1982, data["rates"].dropna(subset=["ga_hours"])["year"].max())]
+    rated = rates.dropna(subset=["ga_hours"])
+    early = rated[rated["year"].between(1990, 1994)]["ntsb_fatal_per_100k_hours"].mean()
+    last = int(rated["year"].max())
+    late = rated[rated["year"].between(last - 4, last)]["ntsb_fatal_per_100k_hours"].mean()
+    st.subheader(f"1. Flying got safer: the fatal accident rate fell {1 - late / early:.0%}")
+    st.write(f"The NTSB's general aviation fatal accident rate averaged {early:.2f} per 100,000 flight hours in "
+             f"1990-1994 and {late:.2f} in {last - 4}-{last}. Flight hours "
+             "changed far less than accidents did, so this is not just less flying.")
+    long = rates.melt(id_vars="year", value_vars=["ntsb_fatal_per_100k_hours", "fatal_per_100k_hours"],
+                      var_name="series", value_name="rate")
+    long["series"] = long["series"].map({"ntsb_fatal_per_100k_hours": "NTSB published",
+                                         "fatal_per_100k_hours": "This project's count"})
+    st.altair_chart(alt.Chart(long, title="Fatal accidents per 100,000 flight hours").mark_line(point=True).encode(
+        x=alt.X("year:Q", title=None, axis=alt.Axis(format="d")), y=alt.Y("rate:Q", title=None),
+        color=alt.Color("series:N", title=None, scale=alt.Scale(range=[FATAL_COLOR, COLOR]), legend=alt.Legend(orient="top")),
+        tooltip=["year:Q", "series:N", alt.Tooltip("rate:Q", format=".2f")]), width="stretch")
+    st.caption("Flight hours: FAA estimates via BTS Table 2-14 (none for 1982-84, 1986-89 and 2011). This project's "
+               "counts are within about 3% of the NTSB's published accident counts.")
+
+    decades = by(ga.assign(decade=ga["year"] // 10 * 10), "decade")
+    st.subheader("2. Fewer accidents, not milder ones")
+    st.write(f"The share of accidents that were fatal barely moved: {decades['fatal_share'].iloc[0]:.1%} in the "
+             f"{int(decades['decade'].iloc[0])}s and {decades['fatal_share'].iloc[-1]:.1%} in the "
+             f"{int(decades['decade'].iloc[-1])}s. The gains came from preventing accidents, not from surviving them.")
+
+    wx = by(ga, "weather").set_index("weather")["fatal_share"]
+    st.subheader(f"3. Instrument weather makes an accident {wx['Instrument (IMC)'] / wx['Visual (VMC)']:.1f}x as likely to be fatal")
+    left, right = st.columns([2, 3])
+    with left:
+        st.write(f"{wx['Instrument (IMC)']:.0%} of accidents in instrument conditions (clouds, low visibility) were "
+                 f"fatal, against {wx['Visual (VMC)']:.0%} in visual conditions. The weather call is the NTSB "
+                 "investigator's.")
+    with right:
+        bar(by(ga, "weather"), "weather", "fatal_share", "Fatal share by weather", fmt=".1%")
+
+    phases = by(ga, "phase_group")
+    phases["All accidents"] = phases["accidents"] / phases["accidents"].sum()
+    phases["Fatal accidents"] = phases["fatal"] / phases["fatal"].sum()
+    man = phases.set_index("phase_group").loc["Maneuvering"]
+    land = phases.set_index("phase_group").loc["Landing"]
+    st.subheader("4. Maneuvering is deadly; landing is not")
+    left, right = st.columns([2, 3])
+    with left:
+        st.write(f"Maneuvering (low passes, turns, aerobatics) is {man['All accidents']:.0%} of accidents but "
+                 f"{man['Fatal accidents']:.0%} of fatal ones. Landing is {land['All accidents']:.0%} "
+                 f"of accidents but {land['Fatal accidents']:.0%} of fatal ones.")
+    with right:
+        top = phases[phases["accidents"] >= 1000].melt(id_vars="phase_group",
+                                                       value_vars=["All accidents", "Fatal accidents"])
+        st.altair_chart(alt.Chart(top, title="Share of accidents by phase of flight").mark_bar().encode(
+            y=alt.Y("phase_group:N", title=None, sort="-x"), x=alt.X("value:Q", title=None, axis=alt.Axis(format=".0%")),
+            yOffset="variable:N", color=alt.Color("variable:N", title=None, legend=alt.Legend(orient="top"),
+                                                  scale=alt.Scale(range=[COLOR, FATAL_COLOR])),
+            tooltip=["phase_group:N", "variable:N", alt.Tooltip("value:Q", format=".1%")]), width="stretch")
+
+    tags = data["tags"][data["tags"]["accident_key"].isin(set(ga["accident_key"]))]
+    tag_stats = tags.groupby("tag").agg(accidents=("ev_id", "nunique"), fatal=("is_fatal", "sum")).reset_index()
+    tag_stats["fatal_share"] = tag_stats["fatal"] / tag_stats["accidents"]
+    tag_stats = tag_stats[tag_stats["accidents"] >= 150]
+    common = tag_stats.nlargest(2, "accidents")
+    deadly = tag_stats.nlargest(3, "fatal_share")
+    st.subheader("5. The most common problems are the most survivable")
+    st.write(f"The two most common accident types in the narratives, {phrase(common['tag'].iloc[0])} and "
+             f"{phrase(common['tag'].iloc[1])}, were fatal {common['fatal_share'].min():.0%}-"
+             f"{common['fatal_share'].max():.0%} of the time. The deadliest types almost always were: "
+             + ", ".join(f"{phrase(t)} ({s:.0%})" for t, s in zip(deadly["tag"], deadly["fatal_share"])) + ".")
+    bar(tag_stats, "tag", "fatal_share", "Fatal share by accident type (narrative keyword tags; 150+ accidents)", fmt=".0%")
+
+    run = data["model_run"].iloc[0]
+    factors = data["model_factors"]
+    factors = factors[(factors["accidents"] >= 200) & ~factors["level"].isin(["Unknown", "Other/unknown", "Other"])]
+    factors = pd.concat([factors.nlargest(8, "odds_ratio"), factors.nsmallest(4, "odds_ratio")])
+    is_tag = factors["factor_name"].str.startswith("Narrative: ")
+    factors["label"] = (factors["factor_name"].str.removeprefix("Narrative: ").str.capitalize() + " (narrative)").where(
+        is_tag, factors["level"] + " (vs. " + factors["reference_level"] + ")")
+    st.subheader("6. A simple model confirms it")
+    st.write(f"A logistic regression trained on 1982-2018 ranks a fatal accident above a non-fatal one "
+             f"{run['lr_roc_auc']:.0%} of the time on {run['test_rows']:,.0f} accidents from 2019 on that it never saw "
+             f"(a flexible gradient-boosting model reaches {run['gb_roc_auc']:.0%}). Phase of flight carries most of "
+             "that. Odds ratios hold the other factors equal; above 1 means higher odds of a fatal outcome.")
+    factors["direction"] = factors["odds_ratio"].map(lambda r: "Higher odds" if r > 1 else "Lower odds")
+    # bars grow from 1.0 ("no difference"): a log axis has no zero to start from
+    st.altair_chart(alt.Chart(factors, title="Odds of a fatal outcome, other factors equal (log scale)").mark_bar().encode(
+        y=alt.Y("label:N", title=None, sort="-x", axis=alt.Axis(labelLimit=340)),
+        x=alt.X("odds_ratio:Q", title=None, scale=alt.Scale(type="log")), x2=alt.datum(1),
+        color=alt.Color("direction:N", title=None, legend=None,
+                        scale=alt.Scale(domain=["Higher odds", "Lower odds"], range=[FATAL_COLOR, COLOR])),
+        tooltip=[alt.Tooltip("factor_name:N", title="Factor"), alt.Tooltip("label:N", title="Level"),
+                 alt.Tooltip("odds_ratio:Q", format=".2f"), alt.Tooltip("accidents:Q", format=","),
+                 alt.Tooltip("fatal_share:Q", format=".1%")]), width="stretch")
+    st.caption("Associations in accident records, not causes. Narrative tags are keyword rules that undercount, "
+               "and pre-2008 narratives are terser. Full method: docs/model_report.md and docs/findings.md in the "
+               "GitHub repository.")
 
 # ---------------------------------------------------------------- overview
-with tabs[0]:
+with tabs[1]:
     s = accident_stats(f)
     c = st.columns(4)
     c[0].metric("Accidents", f"{s['accidents']:,}")
@@ -112,7 +231,7 @@ with tabs[0]:
         bar(by(f, "operation_name"), "operation_name", "accidents", "Accidents by type of operation")
 
 # ---------------------------------------------------------------- phase of flight
-with tabs[1]:
+with tabs[2]:
     phases = by(f, "phase_group").merge(acc[["phase_group", "phase_group_order"]].drop_duplicates(), on="phase_group")
     order = phases.sort_values("phase_group_order")["phase_group"].tolist()
     left, right = st.columns(2)
@@ -127,7 +246,7 @@ with tabs[1]:
                  hide_index=True, width="stretch")
 
 # ---------------------------------------------------------------- causes
-with tabs[2]:
+with tabs[3]:
     tags = data["tags"][data["tags"]["accident_key"].isin(keys)]
     tag_stats = tags.groupby("tag").agg(accidents=("ev_id", "nunique")).reset_index()
     tag_stats["fatal_share"] = tags[tags["is_fatal"] == 1].groupby("tag")["ev_id"].nunique().reindex(
@@ -140,9 +259,11 @@ with tabs[2]:
     findings = data["findings"][data["findings"]["accident_key"].isin(keys)]
     bar(findings.groupby("finding_category")["ev_id"].nunique().rename("accidents").reset_index(),
         "finding_category", "accidents", "Accidents by NTSB finding category")
+    st.caption("The NTSB changed its cause coding in 2008. Earlier accidents use the older system, shown as "
+               "\"Pre-2008:\" categories rather than forced into the newer ones.")
 
 # ---------------------------------------------------------------- aircraft
-with tabs[3]:
+with tabs[4]:
     left, right = st.columns([3, 2])
     with left:
         makes = f.groupby("make")["ev_id"].nunique().rename("Accidents").reset_index()
@@ -157,7 +278,7 @@ with tabs[3]:
         bar(by(f, "acft_category"), "acft_category", "accidents", "Accidents by aircraft category")
 
 # ---------------------------------------------------------------- weather and pilot
-with tabs[4]:
+with tabs[5]:
     left, right = st.columns(2)
     with left:
         bar(by(f, "weather"), "weather", "fatal_share", "Fatal share by weather conditions", fmt=".1%", horizontal=False)
@@ -175,7 +296,7 @@ with tabs[4]:
             fmt=".1%", horizontal=False)
 
 # ---------------------------------------------------------------- map
-with tabs[5]:
+with tabs[6]:
     fatal_only = st.toggle("Fatal accidents only", value=False)
     events = f[f["is_fatal"] == 1] if fatal_only else f
     events = events.drop_duplicates("ev_id")
@@ -186,7 +307,7 @@ with tabs[5]:
     st.map(located, latitude="latitude", longitude="longitude", size=800, color=COLOR + "aa")
 
 # ---------------------------------------------------------------- accident list
-with tabs[6]:
+with tabs[7]:
     query = st.text_input("Search make, model, city, state or probable cause")
     rows = f
     if query:

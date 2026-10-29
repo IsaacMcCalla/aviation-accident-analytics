@@ -48,7 +48,7 @@ To publish a monthly update, run this from the project folder after the usual up
 .\publish_web.ps1
 ```
 
-It exports, commits only the data file, and pushes; the public site redeploys within a couple of minutes. Each update adds about 18 MB to the repository's history. That is fine for years of monthly updates (GitHub's soft limit is about 1 GB), but avoid publishing many times a day.
+It exports, commits only the data file, and pushes; the public site redeploys within a couple of minutes. The file is about 38 MB (1982 onward), and each update adds about 13 MB to the repository's history after git compresses it, about 160 MB a year of monthly updates. GitHub recommends staying under about 1 GB, so that's several years of headroom; avoid publishing many times a day. When the history gets large, move the file to Git LFS or a GitHub release asset.
 
 ## Changing the app
 

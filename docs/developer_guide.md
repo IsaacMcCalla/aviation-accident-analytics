@@ -19,14 +19,15 @@ The project turns the NTSB's public aviation accident database into a cleaned SQ
 
 ```
 1. SOURCES (public files)        NTSB avall.mdb (monthly)   FAA aircraft registry   OurAirports airports.csv
+                                 NTSB Pre2008.mdb (fixed)                           BTS/FAA flight hours (reference/)
         │                                 │                          │                        │
 2. PYTHON LOADERS (src/)         download_ntsb.py            load_faa_registry.py     load_airports.py
-                                 extract_ntsb.py
+                                 extract_ntsb.py                                      load_ga_hours.py
         │                                 └──────────────┬───────────┴────────────────────────┘
 3. SQL SERVER  (sql/)            stg_*  staging tables, every value stored as raw text
    database AviationSafety                     │  02_transform.sql
                                  dim_* + fact_*  star schema (typed, cleaned)  ◄── nlp_narratives.py adds fact_narrative_tag
-                                               │  06_data_quality.sql checks it
+                                               │  06_data_quality.sql checks it   ◄── model_fatality.py adds model_* tables
                                  vw_pbi_*  reporting views (07_powerbi_views.sql)
         │                                      ├──────────────────────────────┐
 4. OUTPUTS                       Power BI project (powerbi/)       export_web_data.py ─► web/data/accidents.db
@@ -39,7 +40,7 @@ The project turns the NTSB's public aviation accident database into a cleaned SQ
 Five ideas explain most of the design:
 
 1. **Data flows one way.** Each layer is rebuilt entirely from the one before it, so you never edit data by hand in a later layer.
-2. **Loads are full refreshes.** `avall.mdb` is a complete snapshot, so the loaders empty each staging table and reload it, and the transform rebuilds every fact table. Running any step twice is safe.
+2. **Loads are full refreshes.** `avall.mdb` (2008 on, updated monthly) and `Pre2008.mdb` (1982–2007, no longer updated) are complete snapshots, so the loaders empty each staging table and reload it, and the transform rebuilds every fact table. Running any step twice is safe. (The one exception is `fact_event_weather`, which is filled incrementally; see 6.4.)
 3. **Staging is text.** Loaders store every value as text, and `02_transform.sql` converts types with `TRY_CAST`. A bad value becomes NULL (and shows up in a quality check) instead of failing the load.
 4. **The `vw_pbi_*` views are the contract.** Power BI and the web export both read them, so a change there reaches both outputs.
 5. **The public site never touches the database.** It reads a snapshot file committed to GitHub. SQL Server keeps Windows-only sign-in and no network access.
@@ -53,8 +54,11 @@ Live site: https://jsaviationanalytics.streamlit.app/ · Repository: https://git
 | Path | What it is |
 | --- | --- |
 | `src/config.py` | Shared helpers: `get_connection()` (SQL Server via ODBC), `setup_logging()`, `log_run()` (writes `dbo.ingest_log`), `insert_sql()` |
-| `src/download_ntsb.py` | Downloads `avall.zip` from the NTSB and extracts `avall.mdb` into `data/ntsb/` |
-| `src/extract_ntsb.py` | Copies NTSB tables from the Access file (or mdbtools CSVs) into `stg_ntsb_*`. The `TABLES` dict maps source tables and columns to staging |
+| `src/download_ntsb.py` | Downloads `avall.zip` (default) or `Pre2008.zip` (`--file Pre2008`) from the NTSB and extracts the `.mdb` into `data/ntsb/` |
+| `src/extract_ntsb.py` | Copies NTSB tables from one or more Access files (or mdbtools CSVs) into `stg_ntsb_*`, newest file first; an event in two files is loaded once. The `TABLES` dict maps source tables and columns to staging |
+| `src/load_ga_hours.py` | Loads `reference/ga_activity_bts_table_2_14.csv` (FAA flight hours and NTSB published GA counts) into `ref_ga_hours` |
+| `src/enrich_weather.py` | Matches U.S. accidents to the nearest station's weather report (IEM archive) in `fact_event_weather`. **On hold**: see 6.4 |
+| `src/model_fatality.py` | Fits the fatality model; writes `model_fatality_factor`, `model_run` and `docs/model_report.md` |
 | `src/load_faa_registry.py` | Loads FAA `MASTER.txt` and `ACFTREF.txt` (aircraft fields only; registrant names and addresses are skipped on purpose) |
 | `src/load_airports.py` | Loads U.S. airports from OurAirports into `stg_airports` |
 | `src/nlp_narratives.py` | Keyword rules (`TAGS`) that tag accident narratives; writes `fact_narrative_tag` |
@@ -71,6 +75,9 @@ Live site: https://jsaviationanalytics.streamlit.app/ · Repository: https://git
 | `web/app.py` | The web dashboard (Streamlit) |
 | `web/Dockerfile`, `web/compose.yaml` | Local container: Python 3.12, port 8080 on localhost only, data mounted read-only |
 | `web/data/accidents.db` | The snapshot the web app reads. **Committed to git** because the public site needs it |
+| `reference/` | Small public reference files committed to git (flight hours by year), with their sources in the file header |
+| `tests/`, `pytest.ini` | The test suite (section 9) |
+| `.github/workflows/ci.yml` | Runs the tests on GitHub on every push |
 | `publish_web.ps1` | Exports the snapshot, commits only that file, and pushes, which redeploys the public site |
 | `docs/` | This guide and the other references |
 | `data/`, `logs/`, `.venv/` | Not in git: raw downloads (~700 MB), run logs, Python environment |
@@ -137,24 +144,27 @@ The `sqlcmd` examples in this guide use `-S localhost -E -C`: local server, Wind
 
 ## 4. First full build
 
-About 15 minutes on a desktop PC. Expected counts are for the October 2026 NTSB file.
+About 20 minutes on a desktop PC. Expected counts are for the October 2026 NTSB file plus `Pre2008.mdb`.
 
 | # | Command | Result |
 | --- | --- | --- |
-| 1 | `sqlcmd -S localhost -E -C -b -i sql\01_schema.sql` | Database `AviationSafety` with ~25 tables |
-| 2 | `.venv\Scripts\python.exe src\download_ntsb.py` | `data\ntsb\avall.mdb` (~535 MB) |
-| 3 | `.venv\Scripts\python.exe src\extract_ntsb.py data\ntsb\avall.mdb --from-year 2023` | A small slice for a first test. Run steps 6–7 on it, then rerun **without** `--from-year` (~31,300 events, ~40 s) |
+| 1 | `sqlcmd -S localhost -E -C -b -i sql\01_schema.sql` | Database `AviationSafety` with ~32 tables |
+| 2 | `.venv\Scripts\python.exe src\download_ntsb.py` then `.venv\Scripts\python.exe src\download_ntsb.py --file Pre2008` | `data\ntsb\avall.mdb` (~535 MB) and `Pre2008.mdb` (~850 MB) |
+| 3 | `.venv\Scripts\python.exe src\extract_ntsb.py data\ntsb\avall.mdb data\ntsb\Pre2008.mdb --from-year 2023` | A small slice for a first test. Run steps 6–7 on it, then rerun **without** `--from-year` (~94,300 events, ~3 min). Leave out `Pre2008.mdb` to cover 2008 onward only |
 | 4 | Download `ReleasableAircraft.zip` from the FAA registry site, unzip to `data\faa\`, then `.venv\Scripts\python.exe src\load_faa_registry.py data\faa` | ~318,000 registered aircraft |
 | 5 | Download `airports.csv` from OurAirports to `data\`, then `.venv\Scripts\python.exe src\load_airports.py data\airports.csv` | ~32,700 U.S. airports |
-| 6 | `sqlcmd -S localhost -E -C -b -i sql\02_transform.sql` | ~31,850 rows in `fact_accident` (~5 s) |
+| 5a | `.venv\Scripts\python.exe src\load_ga_hours.py` | 38 years of flight hours in `ref_ga_hours` |
+| 6 | `sqlcmd -S localhost -E -C -b -i sql\02_transform.sql` | ~95,800 rows in `fact_accident` (~20 s) |
 | 7 | `sqlcmd -S localhost -E -C -b -i sql\06_data_quality.sql` then `sqlcmd -S localhost -E -C -d AviationSafety -Q "EXEC dbo.usp_check_data_quality"` | No FAIL rows (see [section 9](#9-testing-and-verification)) |
 | 8 | `sqlcmd -S localhost -E -C -b -i sql\04_tune.sql` | Indexes and `narrative_flag` |
 | 9 | `sqlcmd -S localhost -E -C -b -i sql\05_adhoc_report_proc.sql` | `usp_accident_report` |
-| 10 | `.venv\Scripts\python.exe src\nlp_narratives.py` | ~11,600 tags |
+| 10 | `.venv\Scripts\python.exe src\nlp_narratives.py` | ~24,900 tags (~25 s) |
+| 10a | `.venv\Scripts\python.exe src\model_fatality.py` | Test ROC AUC about 0.84; `docs\model_report.md` rewritten (~20 s) |
 | 11 | `sqlcmd -S localhost -E -C -b -i sql\07_powerbi_views.sql` | The `vw_pbi_*` views |
 | 12 | Open `powerbi\AccidentDashboard.pbip` in Power BI Desktop, click **Refresh**, then **Ctrl+S** | Dashboard with data. First refresh: choose Windows sign-in; accept the unencrypted-connection prompt (local server) |
-| 13 | `.venv\Scripts\python.exe src\export_web_data.py` | `web\data\accidents.db` (~18 MB) |
-| 14 | Optional: `docker compose -f web\compose.yaml up -d --build` | Web app at http://localhost:8080 |
+| 13 | `.venv\Scripts\python.exe src\export_web_data.py` | `web\data\accidents.db` (~38 MB) |
+| 14 | `.venv\Scripts\python.exe -m pytest` | All tests pass (section 9) |
+| 15 | Optional: `docker compose -f web\compose.yaml up -d --build` | Web app at http://localhost:8080 |
 
 `sql/03_report_slow.sql` is only for the tuning comparison and isn't needed to run the system.
 
@@ -166,12 +176,13 @@ About 15 minutes on a desktop PC. Expected counts are for the October 2026 NTSB 
 
 | Layer | Objects | Notes |
 | --- | --- | --- |
-| Staging | `stg_ntsb_events`, `_aircraft`, `_events_sequence`, `_findings`, `_narratives`, `_injury`, `_flight_crew`, `_flight_time`, `_codes`; `stg_faa_master`, `stg_faa_acftref`; `stg_airports` | All columns text. Emptied and reloaded by the loaders |
-| Dimensions | `dim_date`, `dim_airport`, `dim_aircraft`, `dim_operation`, `dim_phase`, `dim_weather_cond` | `dim_operation`, `dim_phase`, `dim_weather_cond` are seeded in `01`; the transform only adds new codes |
-| Facts | `fact_accident`, `fact_injury`, `fact_finding`, `fact_narrative`, `fact_narrative_tag` | Rebuilt by `02` (tags by `nlp_narratives.py`) |
-| Reference | `ref_ga_hours` | Flight hours per year, typed in by hand (empty until someone fills it) |
+| Staging | `stg_ntsb_events`, `_aircraft`, `_events_sequence`, `_findings`, `_narratives`, `_injury`, `_flight_crew`, `_flight_time`, `_codes`; pre-2008 coding: `_occurrences`, `_seq_of_events`, `_ct_seqevt`; `stg_faa_master`, `stg_faa_acftref`; `stg_airports` | All columns text. Emptied and reloaded by the loaders |
+| Dimensions | `dim_date`, `dim_airport`, `dim_aircraft`, `dim_operation`, `dim_phase`, `dim_weather_cond` | `dim_operation`, `dim_phase` (2008+ codes and pre-2008 `P` codes), `dim_weather_cond` are seeded in `01`; the transform only adds new codes |
+| Facts | `fact_accident`, `fact_injury`, `fact_finding`, `fact_narrative`, `fact_narrative_tag`, `fact_event_weather` | Rebuilt by `02` (tags by `nlp_narratives.py`; weather filled incrementally by `enrich_weather.py`, on hold) |
+| Reference | `ref_ga_hours` | FAA flight hours and the NTSB's published GA counts per year, from `reference/` via `load_ga_hours.py` |
+| Model output | `model_fatality_factor`, `model_run` | Written by `model_fatality.py` |
 | Tuning | `narrative_flag` | Built by `04`; rerun `04` after each transform |
-| Views | `vw_stg_events_clean`, `vw_stg_aircraft_clean` (typed staging), `vw_fleet_by_make`, `vw_ga_rate_by_year`, `vw_pbi_*` (reporting) | |
+| Views | `vw_stg_events_clean`, `vw_stg_aircraft_clean` (typed staging), `vw_fleet_by_make`, `vw_ga_accident` (the GA definition), `vw_ga_rate_by_year`, `vw_pbi_*` (reporting) | |
 | Code | `fn_ntsb_coord` (DDMMSS → decimal degrees), `usp_accident_report`, `usp_check_data_quality` | |
 | Log | `ingest_log` | One row per script run: source, status OK/FAILED, rows, message |
 
@@ -181,14 +192,17 @@ About 15 minutes on a desktop PC. Expected counts are for the October 2026 NTSB 
 - **Count events** with `COUNT(DISTINCT ev_id)`, never `COUNT(*)`. In Power BI that's the `Accidents` measure; in the web app it's `nunique()` on `ev_id`.
 - **Fatalities:** `event_fatalities` is the event total repeated on each aircraft row. Sum it only where `is_primary_aircraft = 1`.
 - **Accidents vs. incidents:** reports use `ev_type = 'ACC'`. The `vw_pbi_*` views already filter to accidents.
-- **Coverage:** `avall.mdb` starts in 2008. Phase of flight and findings use the NTSB's post-2008 coding.
+- **Coverage:** 1982 onward (`Pre2008.mdb` for 1982–2007, `avall.mdb` from 2008). The transform leaves out a handful of stray events dated before 1982. Before 2008, phase of flight is the first occurrence's phase (mapped to the same phase groups) and causes use the older coding, kept as separate "Pre-2008:" finding categories.
+- **General aviation** means `dbo.vw_ga_accident`: U.S. accidents other than Parts 121, 135 and 129, foreign, military and drone operations. Use that view rather than re-deriving the filter.
+- **Times:** NTSB event dates and times (`ev_date`, `ev_time`) are UTC.
 
 ### 5.3 Where codes are translated
 
 | Code type | Translated in |
 | --- | --- |
 | FAR part → operation name | `dim_operation` seed in `01_schema.sql` |
-| Phase number → name and group | `dim_phase` seed in `01_schema.sql` (the NTSB file has no names for these) |
+| Phase number → name and group | `dim_phase` seed in `01_schema.sql` (the NTSB file has no names for the 2008+ codes; pre-2008 codes are prefixed `P`) |
+| Pre-2008 cause codes → words and category | `02_transform.sql`, from the file's `ct_seqevt` table and `seq_of_events.group_code` |
 | Injury, damage, and light codes (`FATL`, `SUBS`, `NDRK`, …) → words | `vw_pbi_accident` in `07_powerbi_views.sql` |
 | Aircraft category (`AIR`, `HELI`, …) → words | `vw_pbi_aircraft` in `07` |
 | Narrative tag ids → display names | `vw_pbi_tag` in `07` |
@@ -203,35 +217,38 @@ Full code meanings: [data_dictionary.md](data_dictionary.md).
 
 ```
 .venv\Scripts\python.exe src\download_ntsb.py
-.venv\Scripts\python.exe src\extract_ntsb.py data\ntsb\avall.mdb
+.venv\Scripts\python.exe src\extract_ntsb.py data\ntsb\avall.mdb data\ntsb\Pre2008.mdb
 sqlcmd -S localhost -E -C -b -i sql\02_transform.sql
 sqlcmd -S localhost -E -C -b -i sql\04_tune.sql
 .venv\Scripts\python.exe src\nlp_narratives.py
+.venv\Scripts\python.exe src\model_fatality.py
 sqlcmd -S localhost -E -C -d AviationSafety -Q "EXEC dbo.usp_check_data_quality"
 ```
+
+`Pre2008.mdb` doesn't change, so it isn't downloaded again; it's listed in the extract because staging is rebuilt from scratch each time.
 
 Then:
 
 1. Read the quality check. **Stop at any FAIL** and use the runbook. WARN rows are worth a glance.
 2. Open the Power BI project, click **Refresh**, then **Ctrl+S**.
 3. Run `.\publish_web.ps1`. It exports the snapshot, commits only `web/data/accidents.db`, and pushes; the public site redeploys within a couple of minutes. The local Docker site picks up the new file on its next page load.
+4. If `docs/model_report.md` changed, commit it too.
 
-The update is done when the quality check has no FAIL rows, the "latest event" date on the web page has moved forward, and the Power BI totals match the web page.
+The update is done when the quality check has no FAIL rows, `pytest` passes, the "latest event" date on the web page has moved forward, and the Power BI totals match the web page.
 
 ### 6.2 Every few months
 
 Reload the slower-changing reference data: download fresh FAA and OurAirports files, run `load_faa_registry.py` and `load_airports.py`, then `02_transform.sql` and the rest of the monthly steps.
 
-### 6.3 When published
+### 6.3 Once a year: flight hours
 
-When the FAA publishes its General Aviation Activity Survey, add the year's hours to `dbo.ref_ga_hours` to get accident rates in `vw_ga_rate_by_year`:
+BTS updates *National Transportation Statistics* Table 2-14 (https://www.bts.gov/content/us-general-aviationa-safety-data) about once a year, adding a year of FAA flight hours and NTSB counts. Append the new year's row to `reference/ga_activity_bts_table_2_14.csv` (hours in thousands, as in the table), then run `load_ga_hours.py`. The site blocks scripted downloads, so open the spreadsheet in a browser and copy the numbers. Rates appear in `vw_ga_rate_by_year`, and the quality check compares this project's GA counts with the NTSB's.
 
-```sql
-INSERT dbo.ref_ga_hours ([year], ga_hours, source)
-VALUES (2025, 0, N'FAA GA Survey CY2025, table 1.3');   -- replace 0 with the published figure
-```
+### 6.4 Weather enrichment (on hold)
 
-Note which operations the survey covers next to any rate you publish.
+`src/enrich_weather.py` matches each U.S. accident to the nearest weather station's report at the time (Iowa Environmental Mesonet archive). A first run was stopped part-way, so `fact_event_weather` covers only 1982 to early 1984. Nothing reads that table yet: `model_fatality.py` has `USE_STATION_WEATHER = False`, and the web export ignores it.
+
+To resume: run `.venv\Scripts\python.exe src\enrich_weather.py` (about 90 minutes for the rest; it continues where it stopped and then fetches only new accidents each month). Then set `USE_STATION_WEATHER = True`, re-run the model, and add the columns you want to the web export.
 
 ---
 
@@ -300,8 +317,8 @@ Model notes for anyone editing:
 
 ### 7.5 Change the web app
 
-1. Edit `web/app.py`. Data comes from `web/data/accidents.db` (tables `accidents`, `tags`, `findings`, `fleet`, `meta`). To add data, change `QUERIES` in `src/export_web_data.py` and re-export.
-2. Try it locally without Docker: in a separate virtual environment, `pip install -r web\requirements.txt` then `streamlit run web\app.py` and open http://localhost:8501.
+1. Edit `web/app.py`. Data comes from `web/data/accidents.db` (tables `accidents`, `tags`, `findings` + `finding_categories`, `fleet`, `rates`, `model_factors`, `model_run`, `meta`). To add data, change `QUERIES` in `src/export_web_data.py` and re-export. Keep the file small: child tables carry `accident_key` only and repeated names go in lookup tables, because every publish adds the file to git history.
+2. Try it locally without Docker: `.venv\Scripts\python.exe -m streamlit run web\app.py` and open http://localhost:8501. Then run `pytest tests\test_web_snapshot.py`, which renders every tab headless.
 3. Local container: `docker compose -f web\compose.yaml up -d --build`, then check http://localhost:8080.
 4. Public site: commit and push (`git add web\app.py`, `git commit -m "..."`, `git push`). Streamlit Cloud redeploys on every push to `main`.
 
@@ -339,20 +356,31 @@ Phase names are seeded in `01_schema.sql` (`dim_phase`). On an existing database
 
 **Git**
 - Commit identity is the GitHub noreply address (`git config user.email`), which keeps personal email out of public history.
-- `data/`, `logs/`, and `.venv/` are ignored. `web/data/accidents.db` is the one data file that is committed (each publish adds about 18 MB to history, fine for years of monthly updates).
+- `data/`, `logs/`, and `.venv/` are ignored. `web/data/accidents.db` is the one data file that is committed (about 38 MB; git compresses its repetitive text, but watch the repository size over years of monthly publishes). Small reference files live in `reference/`.
 - The repository is public: never commit passwords, connection strings with passwords, or personal data.
 
 ---
 
 ## 9. Testing and verification
 
-There's no automated test suite; quality comes from these layers:
+**Automated tests.** Run `.venv\Scripts\python.exe -m pytest` from the repository root (about 10 seconds). GitHub Actions runs them on every push (`.github/workflows/ci.yml`); the green or red mark shows on each commit.
+
+| File | Covers | Runs on GitHub |
+| --- | --- | --- |
+| `tests/test_extract.py` | `to_text()`; loading two NTSB files without duplicates | Yes |
+| `tests/test_tags.py` | Every narrative tag rule, with examples that must and must not match. **Add examples when you add a rule** | Yes |
+| `tests/test_weather.py` | Weather station choice, report matching, flight categories | Yes |
+| `tests/test_reference.py` | The flight-hours reference file | Yes |
+| `tests/test_web_snapshot.py` | The published snapshot (counting rules, coverage, links between tables) and a headless render of every web tab | Yes (Python 3.12, as deployed) |
+| `tests/test_database.py` | No FAIL in the quality checks; GA counts within 5% of the NTSB's; snapshot totals equal the database | No: needs the local SQL Server (skipped automatically) |
+
+**Other checks:**
 
 | Check | How | Pass looks like |
 | --- | --- | --- |
-| Load quality | `EXEC dbo.usp_check_data_quality` | No FAIL. Known WARN: ~45 events marked fatal with zero recorded fatalities (as in the source) |
-| Source fidelity | Spot-check a few recent events on the NTSB CAROL website; compare yearly totals with NTSB published statistics | Same date, place, aircraft, injuries |
-| Output consistency | Compare totals in SQL, Power BI, and the web page | Identical (Oct 2026 file: 28,951 accidents, 6,392 fatal, 16,831 fatalities, 22.1%) |
+| Load quality | `EXEC dbo.usp_check_data_quality` | No FAIL. Known WARN: ~150 events marked fatal with zero recorded fatalities, and 1 finding with no aircraft row (both as in the source) |
+| Source fidelity | Spot-check a few events on the NTSB CAROL website; the quality check compares yearly GA totals with the NTSB's published counts | Same date, place, aircraft, injuries; GA counts within 5% |
+| Output consistency | Compare totals in SQL, Power BI, and the web page | Identical (Oct 2026 data, 1982 on: 89,832 accidents, 18,641 fatal, 50,124 fatalities, 20.8%) |
 | Query changes | For report rewrites, diff old vs. new result sets row for row before comparing speed | Zero differences |
 | Web app | Run locally, click every tab, try the filters and the search | No errors in the page or the log |
 
@@ -365,7 +393,7 @@ SELECT COUNT(DISTINCT ev_id) AS accidents,
 FROM dbo.fact_accident WHERE ev_type = 'ACC';
 ```
 
-A good next improvement is a small `pytest` suite for `to_text()`, `fn_ntsb_coord`, and the tag rules.
+SQLite in the snapshot tests: the snapshot has few indexes, so check links between tables with `NOT IN (SELECT ...)`, not a correlated `NOT EXISTS`. The correlated form compares every pair of rows and can run for many minutes.
 
 ---
 
@@ -404,11 +432,11 @@ For load failures, follow [runbook_failed_ingestion.md](runbook_failed_ingestion
 
 ## 12. Ideas for future work
 
-- Load `Pre2008.mdb` (NTSB data from 1982) and map its older phase and cause codes into `dim_phase` and the findings.
-- Fill `ref_ga_hours` to publish accident rates per 100,000 flight hours.
+- Finish the weather enrichment (6.4) and add observed ceiling, visibility and wind to the model and the web app.
+- Map the pre-2008 cause codes onto the 2008+ finding categories, so cause trends run across 2008.
+- Power BI: add the rates and model results (the views and tables exist; the report pages don't show them yet).
 - A make-name mapping table (for example, ROBINSON / ROBINSON HELICOPTER / ROBINSON HELICOPTER COMPANY) so fleet rates cover more manufacturers.
 - One script, or a Windows scheduled task, that runs the whole monthly update.
-- Automated tests (section 9).
 
 ---
 
@@ -428,3 +456,7 @@ For load failures, follow [runbook_failed_ingestion.md](runbook_failed_ingestion
 | `ev_id` | NTSB's event identifier, the key that ties all NTSB tables together |
 | FAR part | The operating rule a flight was under: 91 general aviation, 121 airlines, 135 charter/commuter |
 | VMC / IMC | Visual / instrument meteorological conditions (good / poor visibility weather) |
+| General aviation (GA) | Civil flying other than airlines and charter; here, `vw_ga_accident` |
+| Rate per 100,000 flight hours | Accidents divided by hours flown, the standard way to compare years with different amounts of flying |
+| Odds ratio | From the fatality model: how the odds of a fatal outcome compare with a reference level, other factors held equal (2.0 = double) |
+| ROC AUC | How well a model ranks cases: the chance a random fatal accident scores above a random non-fatal one (0.5 = guessing, 1.0 = perfect) |

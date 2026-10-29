@@ -5,6 +5,7 @@ logs/
 __pycache__/
 *.pyc
 .venv/
+.pytest_cache/
 
 # web snapshot: accidents.db IS committed (the public site reads it); half-written exports are not
 web/data/*.tmp

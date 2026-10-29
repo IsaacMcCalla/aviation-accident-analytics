@@ -1,11 +1,11 @@
-"""Download the NTSB aviation accident database (avall.zip) and unzip it into data/ntsb/.
+"""Download an NTSB aviation accident database and unzip it into data/ntsb/.
 
-    python src/download_ntsb.py
-    python src/download_ntsb.py --url <link>     # if the NTSB moves the file
+    python src/download_ntsb.py                    # avall.zip: 2008 to present, updated monthly
+    python src/download_ntsb.py --file Pre2008     # Pre2008.zip: 1982-2007, no longer updated
+    python src/download_ntsb.py --url <link>       # if the NTSB moves the file
 
-avall.zip holds avall.mdb (Microsoft Access), a complete snapshot from 1982 to the
-latest monthly update. Check the current link on the NTSB "aviation data" download
-page (data.ntsb.gov/avdata) before the first run.
+Each zip holds one Microsoft Access .mdb file. Check the current link on the NTSB
+"aviation data" download page (data.ntsb.gov/avdata) before the first run.
 """
 import argparse
 import datetime
@@ -18,7 +18,7 @@ from config import get_connection, log_run, setup_logging
 
 log = setup_logging("download_ntsb")
 
-DEFAULT_URL = "https://data.ntsb.gov/avdata/FileDirectory/DownloadFile?fileID=C%3A%5Cavdata%5Cavall.zip"
+URL_TEMPLATE = "https://data.ntsb.gov/avdata/FileDirectory/DownloadFile?fileID=C%3A%5Cavdata%5C{name}.zip"
 OUT_DIR = os.path.join("data", "ntsb")
 
 
@@ -36,13 +36,14 @@ def download(url: str, dest: str) -> int:
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--url", default=DEFAULT_URL)
+    parser.add_argument("--file", default="avall", choices=["avall", "Pre2008"])
+    parser.add_argument("--url", help="full download link (default: the NTSB link for --file)")
     args = parser.parse_args()
 
     os.makedirs(OUT_DIR, exist_ok=True)
-    zip_path = os.path.join(OUT_DIR, "avall.zip")
+    zip_path = os.path.join(OUT_DIR, f"{args.file}.zip")
     try:
-        size = download(args.url, zip_path)
+        size = download(args.url or URL_TEMPLATE.format(name=args.file), zip_path)
         with zipfile.ZipFile(zip_path) as z:
             mdb = next((n for n in z.namelist() if n.lower().endswith(".mdb")), None)
             if mdb is None:

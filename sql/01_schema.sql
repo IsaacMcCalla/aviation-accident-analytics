@@ -35,8 +35,14 @@ IF OBJECT_ID('dbo.stg_ntsb_events') IS NULL
         wx_cond_basic     varchar(5)    NULL,    -- VMC / IMC / UNK
         wind_vel_kts      varchar(10)   NULL,
         vis_sm            varchar(30)   NULL,
-        mid_air           varchar(5)    NULL
+        mid_air           varchar(5)    NULL,
+        ev_tmzn           varchar(10)   NULL,    -- local time zone of ev_time, e.g. CST, PDT
+        wx_obs_fac_id     varchar(10)   NULL     -- weather station the NTSB used
     );
+GO
+/* Columns added after the first release: add them to an existing database */
+IF COL_LENGTH('dbo.stg_ntsb_events', 'ev_tmzn') IS NULL
+    ALTER TABLE dbo.stg_ntsb_events ADD ev_tmzn varchar(10) NULL, wx_obs_fac_id varchar(10) NULL;
 GO
 
 IF OBJECT_ID('dbo.stg_ntsb_aircraft') IS NULL
@@ -77,6 +83,37 @@ IF OBJECT_ID('dbo.stg_ntsb_findings') IS NULL
         finding_code        varchar(20)   NULL,
         finding_description nvarchar(500) NULL,
         cause_factor        varchar(5)    NULL     -- C cause / F factor
+    );
+GO
+
+/* Pre-2008 coding (Pre2008.mdb only): phase of flight per occurrence, and the
+   cause/factor "sequence of events" with its code-name table */
+IF OBJECT_ID('dbo.stg_ntsb_occurrences') IS NULL
+    CREATE TABLE dbo.stg_ntsb_occurrences (
+        ev_id           varchar(20) NOT NULL,
+        aircraft_key    varchar(5)  NULL,
+        occurrence_no   varchar(10) NULL,    -- 1 = first occurrence in the accident sequence
+        occurrence_code varchar(10) NULL,
+        phase_of_flight varchar(10) NULL     -- 500-610 codes, e.g. 572 = Landing - roll
+    );
+GO
+
+IF OBJECT_ID('dbo.stg_ntsb_seq_of_events') IS NULL
+    CREATE TABLE dbo.stg_ntsb_seq_of_events (
+        ev_id         varchar(20) NOT NULL,
+        aircraft_key  varchar(5)  NULL,
+        occurrence_no varchar(10) NULL,
+        seq_event_no  varchar(10) NULL,
+        group_code    varchar(5)  NULL,    -- 1 aircraft/environment, 2 human performance, 3-4 underlying factors
+        subj_code     varchar(10) NULL,    -- meaning in stg_ntsb_ct_seqevt
+        cause_factor  varchar(5)  NULL     -- C cause / F factor
+    );
+GO
+
+IF OBJECT_ID('dbo.stg_ntsb_ct_seqevt') IS NULL
+    CREATE TABLE dbo.stg_ntsb_ct_seqevt (
+        code    varchar(10)   NULL,
+        meaning nvarchar(200) NULL
     );
 GO
 
@@ -311,6 +348,66 @@ BEGIN
 END
 GO
 
+/* Pre-2008 phase codes (Occurrences.Phase_of_Flight in Pre2008.mdb), prefixed with P because
+   the numbers overlap the 2008+ codes with different meanings (500 = Standing here, Approach
+   above). Names are from the file's own code table; groups match the 2008+ groups. */
+INSERT dbo.dim_phase (phase_code, phase_name, phase_group)
+SELECT v.phase_code, v.phase_name, v.phase_group
+FROM (VALUES
+    ('P500', N'Standing', N'Standing'),
+    ('P501', N'Standing - pre-flight', N'Standing'),
+    ('P502', N'Standing - starting engine(s)', N'Standing'),
+    ('P503', N'Standing - engine(s) operating', N'Standing'),
+    ('P504', N'Standing - engine(s) not operating', N'Standing'),
+    ('P505', N'Standing - idling rotors', N'Standing'),
+    ('P510', N'Taxi', N'Taxi'),
+    ('P511', N'Taxi - pushback/tow', N'Taxi'),
+    ('P512', N'Taxi - to takeoff', N'Taxi'),
+    ('P513', N'Taxi - from landing', N'Taxi'),
+    ('P514', N'Taxi - aerial', N'Taxi'),
+    ('P520', N'Takeoff', N'Takeoff'),
+    ('P521', N'Takeoff - roll/run', N'Takeoff'),
+    ('P522', N'Takeoff - initial climb', N'Initial climb'),
+    ('P523', N'Takeoff - aborted', N'Takeoff'),
+    ('P530', N'Climb', N'Enroute'),
+    ('P531', N'Climb - to cruise', N'Enroute'),
+    ('P540', N'Cruise', N'Enroute'),
+    ('P541', N'Cruise - normal', N'Enroute'),
+    ('P542', N'Maneuvering - holding (IFR)', N'Enroute'),
+    ('P550', N'Descent', N'Enroute'),
+    ('P551', N'Descent - normal', N'Enroute'),
+    ('P552', N'Descent - emergency', N'Emergency'),
+    ('P553', N'Descent - uncontrolled', N'Emergency'),
+    ('P560', N'Approach', N'Approach'),
+    ('P561', N'Approach - VFR pattern - downwind', N'Approach'),
+    ('P562', N'Approach - VFR pattern - turn to base', N'Approach'),
+    ('P563', N'Approach - VFR pattern - base leg/base to final', N'Approach'),
+    ('P564', N'Approach - VFR pattern - final approach', N'Approach'),
+    ('P565', N'Go-around (VFR)', N'Approach'),
+    ('P566', N'Approach - IAF to FAF/outer marker (IFR)', N'Approach'),
+    ('P567', N'Approach - FAF/outer marker to threshold (IFR)', N'Approach'),
+    ('P568', N'Approach - circling (IFR)', N'Approach'),
+    ('P569', N'Missed approach (IFR)', N'Approach'),
+    ('P570', N'Landing', N'Landing'),
+    ('P571', N'Landing - flare/touchdown', N'Landing'),
+    ('P572', N'Landing - roll', N'Landing'),
+    ('P573', N'Landing - aborted', N'Landing'),
+    ('P574', N'Emergency landing', N'Emergency'),
+    ('P575', N'Emergency landing after takeoff', N'Emergency'),
+    ('P576', N'Emergency descent/landing', N'Emergency'),
+    ('P580', N'Maneuvering', N'Maneuvering'),
+    ('P581', N'Maneuvering - aerial application', N'Maneuvering'),
+    ('P582', N'Maneuvering - turn to reverse direction', N'Maneuvering'),
+    ('P583', N'Maneuvering - turn to landing area (emergency)', N'Emergency'),
+    ('P590', N'Hover', N'Maneuvering'),
+    ('P591', N'Hover - in ground effect', N'Maneuvering'),
+    ('P592', N'Hover - out of ground effect', N'Maneuvering'),
+    ('P600', N'Other', N'Other'),
+    ('P610', N'Unknown', N'Unknown')
+) v (phase_code, phase_name, phase_group)
+WHERE NOT EXISTS (SELECT 1 FROM dbo.dim_phase p WHERE p.phase_code = v.phase_code);
+GO
+
 IF OBJECT_ID('dbo.dim_weather_cond') IS NULL
 BEGIN
     CREATE TABLE dbo.dim_weather_cond (
@@ -410,14 +507,79 @@ IF OBJECT_ID('dbo.fact_narrative_tag') IS NULL
     );
 GO
 
-/* Exposure for rates: general aviation flight hours by year, typed in from the
-   FAA General Aviation and Part 135 Activity Survey (see README). */
+/* Written by src/enrich_weather.py: the weather report from the nearest station at the time of
+   each U.S. accident (Iowa Environmental Mesonet ASOS archive). One row per event. NOT rebuilt by
+   02_transform.sql, so monthly runs fetch only new events. A row with station NULL means no
+   report was found (kept so the event is not requested again). */
+IF OBJECT_ID('dbo.fact_event_weather') IS NULL
+    CREATE TABLE dbo.fact_event_weather (
+        ev_id              varchar(20)  NOT NULL CONSTRAINT pk_fact_event_weather PRIMARY KEY,
+        station            varchar(10)  NULL,     -- IEM/FAA station id, e.g. VNY
+        station_choice     varchar(10)  NOT NULL, -- ntsb (the station the NTSB named) / nearest / none
+        distance_km        decimal(6,1) NULL,     -- accident site to station
+        obs_time_utc       datetime2(0) NULL,
+        minutes_from_event smallint     NULL,     -- report time minus accident time
+        temp_c             decimal(5,1) NULL,
+        dewpoint_c         decimal(5,1) NULL,
+        wind_kt            smallint     NULL,
+        gust_kt            smallint     NULL,
+        visibility_sm      decimal(5,2) NULL,
+        ceiling_ft         int          NULL,     -- lowest broken/overcast layer; NULL = no ceiling
+        flight_category    varchar(4)   NULL,     -- VFR / MVFR / IFR / LIFR
+        wx_codes           varchar(60)  NULL,     -- present weather, e.g. -RA BR
+        fetched_at         datetime2(0) NOT NULL DEFAULT SYSUTCDATETIME()
+    );
+GO
+
+/* Written by src/model_fatality.py (replaced on each run; model_run keeps every run's scores) */
+IF OBJECT_ID('dbo.model_fatality_factor') IS NULL
+    CREATE TABLE dbo.model_fatality_factor (
+        factor          varchar(60)   NOT NULL,   -- input column, e.g. phase_group
+        factor_name     nvarchar(100) NOT NULL,   -- readable, e.g. Phase of flight
+        level           nvarchar(100) NOT NULL,   -- e.g. Maneuvering
+        reference_level nvarchar(100) NULL,       -- odds ratios compare with this level
+        odds_ratio      float         NOT NULL,   -- logistic regression, other factors held equal
+        accidents       int           NOT NULL,   -- accidents with this level (all years)
+        fatal_share     float         NULL,
+        CONSTRAINT pk_model_fatality_factor PRIMARY KEY (factor, level)
+    );
+GO
+
+IF OBJECT_ID('dbo.model_run') IS NULL
+    CREATE TABLE dbo.model_run (
+        run_id           int IDENTITY(1,1) PRIMARY KEY,
+        run_at           datetime2(0) NOT NULL,
+        train_rows       int   NOT NULL,
+        test_rows        int   NOT NULL,
+        test_fatal_share float NOT NULL,
+        baseline_brier   float NOT NULL,
+        lr_roc_auc       float NOT NULL,
+        lr_pr_auc        float NOT NULL,
+        lr_brier         float NOT NULL,
+        gb_roc_auc       float NOT NULL,
+        gb_pr_auc        float NOT NULL,
+        gb_brier         float NOT NULL
+    );
+GO
+
+/* Exposure for rates: U.S. general aviation flight hours by year (FAA estimates) and the NTSB's
+   own published GA accident counts, used to validate this project's counts.
+   Loaded by src/load_ga_hours.py from reference/ga_activity_bts_table_2_14.csv. */
 IF OBJECT_ID('dbo.ref_ga_hours') IS NULL
     CREATE TABLE dbo.ref_ga_hours (
-        [year]   smallint      PRIMARY KEY,
-        ga_hours bigint        NOT NULL,
-        source   nvarchar(200) NULL
+        [year]               smallint      PRIMARY KEY,
+        ga_hours             bigint        NULL,    -- NULL when no FAA estimate exists (2011)
+        ntsb_accidents       int           NULL,
+        ntsb_fatal_accidents int           NULL,
+        ntsb_fatalities      int           NULL,
+        source               nvarchar(200) NULL
     );
+GO
+IF COL_LENGTH('dbo.ref_ga_hours', 'ntsb_accidents') IS NULL
+BEGIN
+    ALTER TABLE dbo.ref_ga_hours ALTER COLUMN ga_hours bigint NULL;
+    ALTER TABLE dbo.ref_ga_hours ADD ntsb_accidents int NULL, ntsb_fatal_accidents int NULL, ntsb_fatalities int NULL;
+END
 GO
 
 /* Ingestion log: one row per run, used by the runbook for troubleshooting */

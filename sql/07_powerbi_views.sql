@@ -51,7 +51,7 @@ CREATE OR ALTER VIEW dbo.vw_pbi_calendar
 AS
 SELECT date_key, full_date, [year], [quarter], [month], decade
 FROM dbo.dim_date
-WHERE full_date >= '20080101' AND full_date < DATEADD(YEAR, 1, DATEFROMPARTS(YEAR(SYSUTCDATETIME()), 1, 1));
+WHERE full_date >= '19820101' AND full_date < DATEADD(YEAR, 1, DATEFROMPARTS(YEAR(SYSUTCDATETIME()), 1, 1));
 GO
 
 CREATE OR ALTER VIEW dbo.vw_pbi_aircraft

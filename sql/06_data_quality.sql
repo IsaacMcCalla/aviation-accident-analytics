@@ -29,9 +29,16 @@ BEGIN
     FROM (SELECT COUNT(*) n
           FROM dbo.stg_ntsb_aircraft a
           JOIN dbo.stg_ntsb_events e ON e.ev_id = a.ev_id
-          WHERE TRY_CAST(e.ev_date AS date) IS NOT NULL
+          WHERE TRY_CAST(e.ev_date AS date) >= '19820101'   -- same scope rule as 02_transform.sql
             AND TRY_CAST(a.aircraft_key AS smallint) IS NOT NULL) s,
          (SELECT COUNT(*) n FROM dbo.fact_accident) f
+
+    UNION ALL
+    SELECT 'events before 1982 left out by design',
+           'INFO',
+           CONCAT(COUNT(*), ' stray events dated before the NTSB''s 1982 coverage start')
+    FROM dbo.stg_ntsb_events
+    WHERE TRY_CAST(ev_date AS date) < '19820101'
 
     UNION ALL
     SELECT 'findings, injuries and narratives with no accident row',
@@ -88,6 +95,15 @@ BEGIN
            CONCAT(COUNT(*), ' new codes shown as "Phase code N"; add them to the dim_phase seed in 01_schema.sql')
     FROM dbo.dim_phase
     WHERE phase_name LIKE N'Phase code %'
+
+    UNION ALL
+    SELECT 'GA accident counts match the NTSB''s published counts (within 5%)',
+           CASE WHEN COUNT(*) = 0 THEN 'PASS' ELSE 'WARN' END,
+           CONCAT(COUNT(*), ' years outside 5% (see vw_ga_rate_by_year); worst: ',
+                  ISNULL(CAST(MAX(ABS(pct)) AS varchar(10)), '0'), '%')
+    FROM (SELECT CAST(100.0 * ga_accidents / ntsb_accidents - 100 AS decimal(5,1)) AS pct
+          FROM dbo.vw_ga_rate_by_year WHERE ntsb_accidents > 0) x
+    WHERE ABS(pct) > 5
 
     UNION ALL
     SELECT 'data is current (latest event in the last 90 days)',

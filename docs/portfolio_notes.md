@@ -8,11 +8,9 @@ Notes for presenting this project (resume, interviews). Moved here from the READ
 
 See "Additional Information" in the [README](../README.md#additional-information).
 
-## Findings (fill in after analysis)
+## Findings
 
-- Finding 1: [e.g., the Part 91 fatal accident rate fell from X to Y per 100,000 hours between the 2000s and the 2020s]
-- Finding 2: [e.g., accidents in IMC were X times as likely to be fatal as accidents in VMC]
-- Finding 3: [e.g., maneuvering accounts for X% of fatal accidents but Y% of all accidents]
+See [findings.md](findings.md) (numbers, method and SQL) and the **Findings** tab on the live site. The one-line version: general aviation's fatal accident rate roughly halved since the early 1990s, but an accident is as likely to be fatal as ever, and weather, maneuvering and disorientation are what make one deadly.
 
 ## Talking points on limitations
 

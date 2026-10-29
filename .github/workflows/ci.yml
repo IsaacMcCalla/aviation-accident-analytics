@@ -1,0 +1,39 @@
+# Runs the tests on every push and pull request.
+# The database tests (tests/test_database.py) need the local SQL Server and are skipped here;
+# run the full suite locally after a load:  .venv\Scripts\python.exe -m pytest
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  pipeline:
+    name: Pipeline code (Python 3.14)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+      - name: Install the ODBC library pyodbc loads
+        run: sudo apt-get install -y unixodbc
+      - name: Install packages
+        run: pip install -r requirements.txt -r requirements-dev.txt
+      - name: Run tests (except the database and web app ones)
+        run: pytest -m "not db" --ignore=tests/test_web_snapshot.py -v
+
+  web:
+    name: Web snapshot and app (Python 3.12, as deployed)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install packages
+        run: pip install -r web/requirements.txt -r requirements-dev.txt
+      - name: Run tests
+        run: pytest tests/test_web_snapshot.py -v

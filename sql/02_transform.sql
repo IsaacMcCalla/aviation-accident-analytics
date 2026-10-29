@@ -1,7 +1,9 @@
 /* 02_transform.sql
    Staging -> star schema. Run after the loaders. Safe to re-run:
    dimensions are upserted (new values added) and facts are fully rebuilt,
-   because avall.mdb is a complete snapshot. */
+   because avall.mdb (and Pre2008.mdb, when loaded) are complete snapshots.
+   Events before 1982 (a handful of stray records) are left out: the NTSB's
+   systematic coverage starts in 1982. */
 USE AviationSafety;
 GO
 
@@ -42,7 +44,11 @@ SELECT e.ev_id,
        e.ev_highest_injury,
        TRY_CAST(e.inj_tot_f AS int)                                              AS inj_tot_f,
        e.light_cond,
-       CASE WHEN e.wx_cond_basic IN ('VMC', 'IMC') THEN e.wx_cond_basic ELSE 'UNK' END AS wx_cond_basic
+       CASE WHEN e.wx_cond_basic IN ('VMC', 'IMC') THEN e.wx_cond_basic ELSE 'UNK' END AS wx_cond_basic,
+       e.ev_time,          -- local hhmm, for src/enrich_weather.py
+       e.ev_tmzn,
+       e.wx_obs_fac_id,
+       CASE WHEN TRY_CAST(e.ev_date AS date) >= '19820101' THEN 1 ELSE 0 END    AS in_scope
 FROM dbo.stg_ntsb_events e;
 GO
 
@@ -92,7 +98,8 @@ SELECT DISTINCT a.far_part, CONCAT(N'Other (code ', a.far_part, N')'), 0
 FROM dbo.vw_stg_aircraft_clean a
 WHERE NOT EXISTS (SELECT 1 FROM dbo.dim_operation o WHERE o.far_part = a.far_part);
 
-/* Phase codes are seeded in 01_schema.sql; a code the NTSB adds later still gets a row */
+/* Phase codes are seeded in 01_schema.sql; a code the NTSB adds later still gets a row.
+   (Pre-2008 codes are a closed list, fully seeded; stray ones map to Unknown below.) */
 INSERT dbo.dim_phase (phase_code, phase_name, phase_group)
 SELECT DISTINCT q.phase_no, CONCAT(N'Phase code ', q.phase_no), N'Unknown'
 FROM dbo.stg_ntsb_events_sequence q
@@ -110,6 +117,15 @@ WITH defining AS (
            ROW_NUMBER() OVER (PARTITION BY ev_id, aircraft_key ORDER BY TRY_CAST(occurrence_no AS int)) AS rn
     FROM dbo.stg_ntsb_events_sequence
     WHERE defining_ev = '1'
+), first_occ AS (
+    -- Pre-2008 events have no "defining event"; use the first occurrence, as NTSB studies of that era do
+    SELECT o.ev_id, TRY_CAST(o.aircraft_key AS smallint) AS aircraft_key,
+           'P' + o.phase_of_flight AS phase_code, c.meaning AS occurrence_description,
+           ROW_NUMBER() OVER (PARTITION BY o.ev_id, o.aircraft_key ORDER BY TRY_CAST(o.occurrence_no AS int)) AS rn
+    FROM dbo.stg_ntsb_occurrences o
+    LEFT JOIN (SELECT code, MIN(meaning) AS meaning FROM dbo.stg_ntsb_codes
+               WHERE table_name = 'Occurrences' AND column_name = 'Occurrence_Code'
+               GROUP BY code) c ON c.code = o.occurrence_code
 ), pilot AS (
     SELECT c.ev_id, TRY_CAST(c.aircraft_key AS smallint) AS aircraft_key,
            TRY_CAST(c.crew_age AS smallint)               AS age,
@@ -148,7 +164,7 @@ SELECT e.ev_id,
        COALESCE(ap_faa.airport_key, ap_icao.airport_key),
        da.aircraft_dim_key,
        o.operation_key,
-       ISNULL(ph.phase_key, ph_unk.phase_key),
+       COALESCE(ph.phase_key, ph_old.phase_key, ph_unk.phase_key),
        w.wx_cond_key,
        e.light_cond,
        a.damage,
@@ -161,7 +177,7 @@ SELECT e.ev_id,
        COUNT(*) OVER (PARTITION BY e.ev_id),
        a.homebuilt,
        a.regis_no,
-       d.occurrence_description,
+       COALESCE(d.occurrence_description, fo.occurrence_description),
        p.age,
        p.total_hours,
        CASE WHEN p.total_hours IS NULL THEN 'Unknown'
@@ -179,6 +195,8 @@ JOIN dbo.dim_weather_cond w ON w.wx_code = e.wx_cond_basic
 CROSS JOIN (SELECT phase_key FROM dbo.dim_phase WHERE phase_code = 'UNK') ph_unk
 LEFT JOIN defining d       ON d.ev_id = e.ev_id AND d.aircraft_key = a.aircraft_key AND d.rn = 1
 LEFT JOIN dbo.dim_phase ph ON ph.phase_code = d.phase_no
+LEFT JOIN first_occ fo     ON fo.ev_id = e.ev_id AND fo.aircraft_key = a.aircraft_key AND fo.rn = 1
+LEFT JOIN dbo.dim_phase ph_old ON ph_old.phase_code = fo.phase_code
 LEFT JOIN pilot p          ON p.ev_id = e.ev_id AND p.aircraft_key = a.aircraft_key AND p.rn = 1
 LEFT JOIN inj i            ON i.ev_id = e.ev_id AND i.aircraft_key = a.aircraft_key
 -- most events give the FAA identifier; some give the ICAO code (KATL) instead
@@ -187,12 +205,15 @@ LEFT JOIN (SELECT icao, MIN(airport_key) AS airport_key
            FROM dbo.dim_airport WHERE icao IS NOT NULL GROUP BY icao) ap_icao
        ON ap_icao.icao = e.ev_nr_apt_id
 WHERE e.ev_date IS NOT NULL
+  AND e.in_scope = 1
   AND a.aircraft_key IS NOT NULL;
 
+/* Child facts skip the rows of out-of-scope (pre-1982) events */
 INSERT dbo.fact_injury (ev_id, aircraft_key_ntsb, person_category, injury_level, person_count)
-SELECT ev_id, TRY_CAST(aircraft_key AS smallint), inj_person_category, injury_level, TRY_CAST(inj_person_count AS int)
-FROM dbo.stg_ntsb_injury
-WHERE TRY_CAST(aircraft_key AS smallint) IS NOT NULL;
+SELECT s.ev_id, TRY_CAST(s.aircraft_key AS smallint), s.inj_person_category, s.injury_level, TRY_CAST(s.inj_person_count AS int)
+FROM dbo.stg_ntsb_injury s
+WHERE TRY_CAST(s.aircraft_key AS smallint) IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM dbo.vw_stg_events_clean e WHERE e.ev_id = s.ev_id AND e.in_scope = 0);
 
 INSERT dbo.fact_finding (ev_id, aircraft_key_ntsb, finding_no, finding_code, finding_description,
                          finding_category, cause_factor)
@@ -203,10 +224,31 @@ SELECT ev_id, TRY_CAST(aircraft_key AS smallint), TRY_CAST(finding_no AS smallin
 FROM dbo.stg_ntsb_findings
 WHERE TRY_CAST(aircraft_key AS smallint) IS NOT NULL;
 
+/* Pre-2008 causes and factors (seq_of_events). They use a different coding system, so they
+   keep their own categories, prefixed "Pre-2008:", instead of a guessed mapping to the 2008+ ones.
+   finding_no = occurrence * 100 + position in that occurrence's sequence. */
+INSERT dbo.fact_finding (ev_id, aircraft_key_ntsb, finding_no, finding_code, finding_description,
+                         finding_category, cause_factor)
+SELECT s.ev_id, TRY_CAST(s.aircraft_key AS smallint),
+       TRY_CAST(s.occurrence_no AS int) * 100 + TRY_CAST(s.seq_event_no AS int),
+       s.subj_code,
+       ISNULL(UPPER(LEFT(c.meaning, 1)) + LOWER(SUBSTRING(c.meaning, 2, 200)), CONCAT(N'Subject code ', s.subj_code)),
+       CASE s.group_code WHEN '1' THEN N'Pre-2008: Aircraft and environment'
+                         WHEN '2' THEN N'Pre-2008: Human performance'
+                         WHEN '3' THEN N'Pre-2008: Direct underlying factor'
+                         WHEN '4' THEN N'Pre-2008: Indirect underlying factor'
+                         ELSE N'Pre-2008: Other' END,
+       CASE WHEN s.cause_factor IN ('C', 'F') THEN s.cause_factor END
+FROM dbo.stg_ntsb_seq_of_events s
+LEFT JOIN (SELECT code, MIN(meaning) AS meaning FROM dbo.stg_ntsb_ct_seqevt GROUP BY code) c ON c.code = s.subj_code
+WHERE TRY_CAST(s.aircraft_key AS smallint) IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM dbo.vw_stg_events_clean e WHERE e.ev_id = s.ev_id AND e.in_scope = 0);
+
 INSERT dbo.fact_narrative (ev_id, aircraft_key_ntsb, narr_accp, narr_cause)
-SELECT ev_id, TRY_CAST(aircraft_key AS smallint), narr_accp, narr_cause
-FROM dbo.stg_ntsb_narratives
-WHERE TRY_CAST(aircraft_key AS smallint) IS NOT NULL;
+SELECT s.ev_id, TRY_CAST(s.aircraft_key AS smallint), s.narr_accp, s.narr_cause
+FROM dbo.stg_ntsb_narratives s
+WHERE TRY_CAST(s.aircraft_key AS smallint) IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM dbo.vw_stg_events_clean e WHERE e.ev_id = s.ev_id AND e.in_scope = 0);
 GO
 
 /* ---------- 3. Reporting views ---------- */
@@ -222,23 +264,39 @@ JOIN dbo.stg_faa_acftref r ON r.code = m.mfr_mdl_code
 GROUP BY UPPER(r.mfr), r.type_acft;
 GO
 
-/* U.S. Part 91 accident and fatal accident rates per 100,000 flight hours.
-   Rates are NULL until dbo.ref_ga_hours is filled in for that year. */
+/* U.S. general aviation accidents per 100,000 flight hours, by year.
+   "General aviation" follows the NTSB's definition as closely as the public file allows: civil
+   flying in the U.S. (territories are coded USA) other than Parts 121, 135 and 129, foreign
+   (NUSC/NUSN), military (ARMF) and drone (107) operations. vw_ga_accident is that set.
+   This project's counts are within about 3% of the NTSB's published accident counts and run
+   3-7% below its fatal-accident counts since 2008; the published counts (ntsb_*) are kept next
+   to them, so quote the ntsb_* rates for trends and use this project's counts for breakdowns.
+   Rates are NULL for years with no FAA flight-hour estimate (see dbo.ref_ga_hours). */
+CREATE OR ALTER VIEW dbo.vw_ga_accident
+AS
+SELECT f.*
+FROM dbo.fact_accident f
+JOIN dbo.dim_operation o ON o.operation_key = f.operation_key
+WHERE f.ev_type = 'ACC'
+  AND f.ev_country = 'USA'
+  AND o.far_part NOT IN ('121', '135', '129', 'NUSC', 'NUSN', 'ARMF', '107');
+GO
+
 CREATE OR ALTER VIEW dbo.vw_ga_rate_by_year
 AS
 SELECT d.[year],
        COUNT(DISTINCT f.ev_id)                                    AS ga_accidents,
        COUNT(DISTINCT CASE WHEN f.is_fatal = 1 THEN f.ev_id END)  AS ga_fatal_accidents,
+       h.ntsb_accidents,
+       h.ntsb_fatal_accidents,
        h.ga_hours,
        100000.0 * COUNT(DISTINCT f.ev_id) / NULLIF(h.ga_hours, 0) AS accidents_per_100k_hours,
        100000.0 * COUNT(DISTINCT CASE WHEN f.is_fatal = 1 THEN f.ev_id END) / NULLIF(h.ga_hours, 0)
-                                                                  AS fatal_per_100k_hours
-FROM dbo.fact_accident f
-JOIN dbo.dim_date d       ON d.date_key = f.date_key
-JOIN dbo.dim_operation o  ON o.operation_key = f.operation_key
+                                                                  AS fatal_per_100k_hours,
+       100000.0 * h.ntsb_accidents / NULLIF(h.ga_hours, 0)       AS ntsb_accidents_per_100k_hours,
+       100000.0 * h.ntsb_fatal_accidents / NULLIF(h.ga_hours, 0) AS ntsb_fatal_per_100k_hours
+FROM dbo.vw_ga_accident f
+JOIN dbo.dim_date d          ON d.date_key = f.date_key
 LEFT JOIN dbo.ref_ga_hours h ON h.[year] = d.[year]
-WHERE f.ev_type = 'ACC'
-  AND f.ev_country = 'USA'
-  AND o.far_part = '091'
-GROUP BY d.[year], h.ga_hours;
+GROUP BY d.[year], h.ga_hours, h.ntsb_accidents, h.ntsb_fatal_accidents;
 GO

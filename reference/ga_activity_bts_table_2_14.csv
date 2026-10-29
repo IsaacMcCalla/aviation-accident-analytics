@@ -1,0 +1,49 @@
+# U.S. general aviation flight hours and NTSB accident counts by year.
+# Source: Bureau of Transportation Statistics, National Transportation Statistics Table 2-14,
+#   "U.S. General Aviation Safety Data" (file table_02_14_072726.xlsx, July 2026), which cites
+#   NTSB US Civil Aviation Accident Statistics (as of Feb. 10, 2026). Flight hours are FAA
+#   General Aviation and Part 135 Activity Survey estimates.
+#   https://www.bts.gov/content/us-general-aviationa-safety-data
+# Definition: U.S.-registered civil aircraft not operated under 14 CFR 121 or 135; accidents on
+#   foreign soil and in foreign waters excluded. Years the table does not include are left out;
+#   2011 has no flight-hour estimate (the survey was not done that year).
+# Columns: flight_hours_thousands is blank when not available.
+year,flight_hours_thousands,ntsb_accidents,ntsb_fatal_accidents,ntsb_fatalities
+1975,28799,3995,633,1252
+1980,36402,3590,618,1239
+1985,28322,2739,498,956
+1990,28510,2242,444,770
+1991,27678,2197,439,800
+1992,24780,2110,450,866
+1993,22796,2064,401,744
+1994,22235,2021,404,730
+1995,24906,2056,412,734
+1996,24881,1908,361,636
+1997,25600,1840,350,631
+1998,25517,1902,364,624
+1999,29246,1905,340,621
+2000,27838,1837,345,596
+2001,25430,1728,326,563
+2002,25545,1716,345,581
+2003,25997.782,1741,352,633
+2004,24888.126,1619,314,559
+2005,23167.712,1671,321,563
+2006,23962.936,1522,307,705
+2007,23818.668,1654,288,496
+2008,22804.648,1569,277,496
+2009,20861.866,1481,276,481
+2010,21688.409,1441,271,458
+2011,,1470,270,458
+2012,20880.993,1470,273,439
+2013,19492.356,1223,221,390
+2014,19617.389,1222,255,422
+2015,20576.072,1211,230,378
+2016,21333.747,1269,213,386
+2017,21702.719,1234,203,331
+2018,21663.367,1275,224,379
+2019,21800.689,1221,235,417
+2020,19454.467,1087,203,329
+2021,21965.784,1154,211,347
+2022,22542.999,1208,212,337
+2023,24949.329,1148,189,305
+2024,24813.299,1126,182,305
