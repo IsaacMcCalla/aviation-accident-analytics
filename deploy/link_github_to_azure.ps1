@@ -7,6 +7,10 @@
 #   1. An app registration and service principal named github-aviation-deploy: an identity for the workflow.
 #   2. A federated credential: Azure accepts this identity's sign-in ONLY from GitHub Actions runs of
 #      IsaacMcCalla/aviation-accident-analytics on the main branch (OpenID Connect; nothing to leak).
+#      GitHub's tokens name the repository with its owner and repository ID numbers
+#      (repo:IsaacMcCalla@744968/aviation-accident-analytics@1437579775:ref:refs/heads/main), so a
+#      deleted-and-recreated repository with the same name can't inherit access. The script looks the
+#      IDs up; a subject without them fails with AADSTS700213 "No matching federated identity record".
 #   3. A Contributor role assignment scoped to the aviation-dashboard Container App only: the workflow
 #      can update that one app and nothing else in the subscription.
 # It then prints the five values to add as GitHub repository variables (they are IDs, not secrets).
@@ -22,10 +26,12 @@ $app = "aviation-dashboard"
 $clientId = & $az ad app create --display-name github-aviation-deploy --query appId --output tsv --only-show-errors
 & $az ad sp create --id $clientId --only-show-errors --output none
 
+$gh = Invoke-RestMethod -Headers @{ "User-Agent" = "aviation-accident-analytics" } "https://api.github.com/repos/$repo"
+$owner, $name = $repo.Split("/")
 $credential = @{
     name        = "github-main-branch"
     issuer      = "https://token.actions.githubusercontent.com"
-    subject     = "repo:${repo}:ref:refs/heads/main"
+    subject     = "repo:${owner}@$($gh.owner.id)/${name}@$($gh.id):ref:refs/heads/main"
     description = "GitHub Actions deploy workflow, main branch only"
     audiences   = @("api://AzureADTokenExchange")
 } | ConvertTo-Json

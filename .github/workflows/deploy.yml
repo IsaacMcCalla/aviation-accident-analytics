@@ -7,6 +7,8 @@
 #              below exist (Settings > Secrets and variables > Actions > Variables). Signs in to Azure
 #              with OpenID Connect, so no password or key is stored in GitHub.
 #              AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID, AZURE_RESOURCE_GROUP, AZURE_CONTAINERAPP
+#              Set up by deploy/link_github_to_azure.ps1. If azure/login fails with AADSTS700213, the
+#              federated credential's subject doesn't match the token (see the script's header).
 name: deploy
 
 on:
