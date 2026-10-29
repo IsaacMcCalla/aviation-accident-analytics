@@ -1,5 +1,6 @@
 # Export the web snapshot and publish it: commits web/data/accidents.db and pushes to GitHub.
-# Streamlit Community Cloud redeploys the public site within a minute or two of the push.
+# The push starts the "deploy" workflow, which tests, builds a new image and updates the
+# Azure Container App (about 3-5 minutes; watch the repository's Actions tab).
 # Run after the monthly update:  .\publish_web.ps1
 param([string]$Message = "Update web data")
 
@@ -18,4 +19,4 @@ if ($LASTEXITCODE -ne 0) { Write-Error "Commit failed; nothing published."; exit
 git push
 if ($LASTEXITCODE -ne 0) { Write-Error "Push failed. The commit is saved locally; run 'git push' once the problem is fixed."; exit 1 }
 
-"Published. The site updates in a minute or two."
+"Published. The site updates in about 3-5 minutes, once the deploy workflow finishes (GitHub > Actions)."

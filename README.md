@@ -2,7 +2,7 @@
 
 An end-to-end data project on civil aviation accidents. It loads the NTSB's public accident database (1982 to present, about 90,000 accidents) into SQL Server, models and quality-checks it, validates it against the NTSB's published statistics, tunes the heavy reports, and presents the results in a Power BI dashboard and a public web dashboard.
 
-**Live dashboard:** https://jsaviationanalytics.streamlit.app/
+**Live dashboard:** https://aviation-dashboard.braveriver-68d22d3c.eastus.azurecontainerapps.io (hosted on Azure Container Apps; the first visit after a quiet spell takes about 10–20 seconds to wake it)
 
 **Question it answers:** what patterns show up in aviation accidents (phase of flight, weather, aircraft, pilot experience, type of operation), and how have accident rates changed over time?
 
@@ -23,7 +23,7 @@ Details, method and limits: [docs/findings.md](docs/findings.md) and [docs/model
 Public sources  ──►  Python loaders (src/)  ──►  SQL Server: staging ─► star schema ─► reporting views (sql/)
                                                                                           │
                                        Power BI dashboard (powerbi/)  ◄───────────────────┤
-                                       Web dashboard (web/): Docker locally, Streamlit Cloud publicly  ◄── snapshot export
+                                       Web dashboard (web/): Docker locally, Azure Container Apps publicly  ◄── snapshot export
 ```
 
 | Folder | Contents |
@@ -31,7 +31,8 @@ Public sources  ──►  Python loaders (src/)  ──►  SQL Server: staging
 | `src/` | Python: download, extract, load, narrative tagging, fatality model, web export |
 | `sql/` | Numbered T-SQL scripts: schema, transform, tuning, report procedure, quality checks, reporting views |
 | `powerbi/` | Power BI project (`AccidentDashboard.pbip`) |
-| `web/` | Streamlit web app, Dockerfile, compose file, and the published data snapshot |
+| `web/` | Streamlit web app, Dockerfiles (local and cloud), compose file, and the published data snapshot |
+| `deploy/` | One-time Azure setup script (lets GitHub Actions deploy to the Container App) |
 | `reference/` | Small public reference data (flight hours by year) |
 | `tests/` | `pytest` suite, run on every push by GitHub Actions |
 | `docs/` | Developer guide, findings, model report and references |
@@ -86,7 +87,8 @@ Then follow [section 4 of the guide](docs/developer_guide.md#4-first-full-build)
 - Built a fatality model (logistic regression and gradient boosting) on 78,000+ accidents, tested on held-out recent years (ROC AUC 0.84), with interpretable odds ratios
 - Cut a heavy safety report from 438 ms to 134 ms and from 455,000 to under 1,000 logical reads by replacing correlated per-row lookups with indexed set-based joins and a pre-computed text flag, validated against identical results
 - Delivered a Power BI dashboard and a parameterized ad hoc report procedure, documented with a README, developer guide, data dictionary, and troubleshooting runbook
-- Published a public web dashboard (Streamlit, containerized with Docker) fed by a monthly snapshot export, with a 56-test pytest suite run by GitHub Actions on every push: https://jsaviationanalytics.streamlit.app/
+- Published a public web dashboard (Streamlit, containerized with Docker) on Azure Container Apps, deployed by a GitHub Actions pipeline (tests, image build, deploy) that signs in with OpenID Connect and a least-privilege identity, with scale-to-zero hosting and a budget alert: https://aviation-dashboard.braveriver-68d22d3c.eastus.azurecontainerapps.io
+- Wrote a 57-test pytest suite covering the loaders, text rules, the published data snapshot and a headless render of the web app, run on every push
 - Classified 90,000+ accident narratives with rule-based text tagging to quantify causes such as fuel exhaustion and VFR flight into IMC
 
 ## Known limitations

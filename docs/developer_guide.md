@@ -34,7 +34,7 @@ The project turns the NTSB's public aviation accident database into a cleaned SQ
                                                                                             │
                                                                    Streamlit app (web/app.py)
                                                                    ├─ Docker, http://localhost:8080 (this PC only)
-                                                                   └─ Streamlit Community Cloud (public site)
+                                                                   └─ Azure Container Apps (public site), deployed by GitHub Actions
 ```
 
 Five ideas explain most of the design:
@@ -45,7 +45,7 @@ Five ideas explain most of the design:
 4. **The `vw_pbi_*` views are the contract.** Power BI and the web export both read them, so a change there reaches both outputs.
 5. **The public site never touches the database.** It reads a snapshot file committed to GitHub. SQL Server keeps Windows-only sign-in and no network access.
 
-Live site: https://jsaviationanalytics.streamlit.app/ · Repository: https://github.com/IsaacMcCalla/aviation-accident-analytics
+Live site: https://aviation-dashboard.braveriver-68d22d3c.eastus.azurecontainerapps.io · Repository: https://github.com/IsaacMcCalla/aviation-accident-analytics
 
 ---
 
@@ -78,6 +78,8 @@ Live site: https://jsaviationanalytics.streamlit.app/ · Repository: https://git
 | `reference/` | Small public reference files committed to git (flight hours by year), with their sources in the file header |
 | `tests/`, `pytest.ini` | The test suite (section 9) |
 | `.github/workflows/ci.yml` | Runs the tests on GitHub on every push |
+| `.github/workflows/deploy.yml` | Tests, builds `web/Dockerfile.cloud` into a GitHub registry image, and deploys it to Azure (section 10) |
+| `deploy/link_github_to_azure.ps1` | One-time setup: the Azure identity the deploy workflow signs in with |
 | `publish_web.ps1` | Exports the snapshot, commits only that file, and pushes, which redeploys the public site |
 | `docs/` | This guide and the other references |
 | `data/`, `logs/`, `.venv/` | Not in git: raw downloads (~700 MB), run logs, Python environment |
@@ -322,7 +324,7 @@ Model notes for anyone editing:
 1. Edit `web/app.py`. Data comes from `web/data/accidents.db` (tables `accidents`, `tags`, `findings` + `finding_categories`, `fleet`, `rates`, `model_factors`, `model_run`, `meta`). To add data, change `QUERIES` in `src/export_web_data.py` and re-export. Keep the file small: child tables carry `accident_key` only and repeated names go in lookup tables, because every publish adds the file to git history.
 2. Try it locally without Docker: `.venv\Scripts\python.exe -m streamlit run web\app.py` and open http://localhost:8501. Then run `pytest tests\test_web_snapshot.py`, which renders every tab headless.
 3. Local container: `docker compose -f web\compose.yaml up -d --build`, then check http://localhost:8080.
-4. Public site: commit and push (`git add web\app.py`, `git commit -m "..."`, `git push`). Streamlit Cloud redeploys on every push to `main`.
+4. Public site: commit and push (`git add web\app.py`, `git commit -m "..."`, `git push`). Any push to `main` that changes `web/` runs the deploy workflow, which tests, builds and updates the Azure site (about 3–5 minutes).
 
 Keep the counting rules from 5.2 (the `accident_stats` and `by` helpers in `app.py` already follow them). Pin exact package versions in `web/requirements.txt`; the cloud and Docker builds install exactly those.
 
@@ -405,9 +407,11 @@ SQLite in the snapshot tests: the snapshot has few indexes, so check links betwe
 | --- | --- | --- | --- |
 | Power BI (local) | `powerbi/*.pbip` opened in Power BI Desktop | Refresh, then save | Power BI's error dialog; SQL Server waits (see section 11) |
 | Web, local | `web/compose.yaml`: image `aviation-dashboard`, `127.0.0.1:8080 → 8501`, `web/data` mounted read-only, restarts with Docker | Data: re-export (no restart). Code: `docker compose -f web\compose.yaml up -d --build` | `docker compose -f web\compose.yaml logs --tail 50` |
-| Web, public | Streamlit Community Cloud, from this repo, branch `main`, main file `web/app.py`, Python 3.12, installs `web/requirements.txt`. No secrets | Any push to `main` redeploys. Data: `.\publish_web.ps1` | share.streamlit.io → the app → **Manage app** (logs, reboot, settings) |
+| Web, public | Azure Container Apps: resource group `rg-aviation-dashboard`, app `aviation-dashboard`, image `ghcr.io/isaacmccalla/aviation-dashboard` built from `web/Dockerfile.cloud` (data baked in) | Any push to `main` that changes `web/` runs `.github/workflows/deploy.yml`: test, build, deploy. Data: `.\publish_web.ps1` | The repository's **Actions** tab (deploy runs); `az containerapp logs show` (web/README.md lists the commands) |
 
-Publishing requires push access to the GitHub repository; Git Credential Manager remembers the sign-in after the first push. The public app sleeps after several days without visitors, and the next visitor clicks a "wake up" button.
+Publishing requires push access to the GitHub repository; Git Credential Manager remembers the sign-in after the first push. The workflow signs in to Azure without stored secrets: the `github-aviation-deploy` identity trusts only this repository's `main` branch and can change only the one Container App (`deploy/link_github_to_azure.ps1` set it up; the five `AZURE_*` repository variables point the workflow at it).
+
+The public app scales to zero when idle, so the first visitor after a quiet spell waits about 10–20 seconds. Costs stay within Azure's free monthly allowance at this traffic; the `aviation-monthly` budget emails the subscription owner if spending passes $5 a month. To shut the site down completely: `az group delete -n rg-aviation-dashboard`.
 
 ---
 
